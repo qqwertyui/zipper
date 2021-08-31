@@ -11,10 +11,10 @@ char prepared_string[4];
 } // namespace Version
 
 DEFINE_string(f, "", "Input file");
-DEFINE_string(m, "", "Mode");
+DEFINE_string(m, "", "Mode (list, extract)");
 
 int main(int argc, char **argv) {
-  gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract\n");
+  gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract");
 
   sprintf(Version::prepared_string, "%d.%d", Version::MAJOR, Version::MINIOR);
   gflags::SetVersionString(Version::prepared_string);
