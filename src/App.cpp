@@ -1,9 +1,8 @@
 #include <gflags/gflags.h>
 
 #include "Error.hpp"
-#include "Zip.hpp"
 #include "Log.hpp"
-
+#include "Zip.hpp"
 
 namespace Version {
 constexpr int MAJOR = 0;
@@ -43,22 +42,22 @@ int main(int argc, char **argv) {
     archive.list_files();
   } else if (operation == Zip::Job::EXTRACT) {
     unsigned int status = archive.extract_all();
-    if(status != Status::OK) {
-        if (status == Status::FILE_NOT_FOUND) {
+    if (status != Status::OK) {
+      if (status == Status::FILE_NOT_FOUND) {
         Log::error("File doesn't exist");
-        } else if (status == Status::DECOMPRESS_ERROR) {
+      } else if (status == Status::DECOMPRESS_ERROR) {
         Log::error("Decompression failure");
-        } else if (status == Status::IO_ERROR) {
+      } else if (status == Status::IO_ERROR) {
         Log::error("Input/Output error");
-        } else if (status == Status::WRONG_NAME) {
+      } else if (status == Status::WRONG_NAME) {
         Log::error("Wrong file path");
-        } else {
+      } else {
         Log::error("Unkown error");
-        }
-        return status;
+      }
+      return status;
     }
     Log::info("Sucesfully extraced file(s)");
   }
-  
+
   return Error::OK;
 }

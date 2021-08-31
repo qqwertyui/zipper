@@ -72,7 +72,6 @@ char *find_last_of(const char *text, const char *delimiter) {
   return stripped_name;
 }
 
-
 Data *zlib_inflate(Data *input) {
   constexpr unsigned int CHUNKSZ = 0x1000;
   Chunk_manager container;
@@ -109,7 +108,6 @@ Data *zlib_inflate(Data *input) {
   return d;
 }
 
-
 void create_directory(const char *filename) {
   char *buf = new char[strlen(filename) + 1];
   memset(buf, 0, strlen(filename + 1));
@@ -141,4 +139,4 @@ char *copy_string(const char *text, unsigned int length) {
 
   return copy;
 }
-}
+} // namespace Utils

@@ -3,8 +3,8 @@
 #include <string>
 
 namespace Log {
-    void info(std::string msg);
-    void error(std::string msg);
-}
+void info(std::string msg);
+void error(std::string msg);
+} // namespace Log
 
 #endif

@@ -1,7 +1,7 @@
 #include "Zip_structs.hpp"
 
-#include <zlib.h>
 #include <cstring>
+#include <zlib.h>
 
 ECDR::ECDR(unsigned char *data) {
   memcpy(this, data, sizeof(ECDR_base));

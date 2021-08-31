@@ -1,8 +1,8 @@
 #ifndef ZIP_STRUCTS
 #define ZIP_STRUCTS
 
-#include <limits.h>
 #include <cstdint>
+#include <limits.h>
 
 /*
 Taken directly from APPNOTE.TXT, but is not used at all
