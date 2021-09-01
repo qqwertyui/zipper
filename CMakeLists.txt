@@ -17,4 +17,5 @@ configure_file(include/Version.hpp.in ${CMAKE_SOURCE_DIR}/include/Version.hpp)
 target_link_libraries(zipper PUBLIC gflags_static)
 target_link_libraries(zipper PUBLIC z)
 target_link_libraries(zipper PUBLIC shlwapi)
-target_link_libraries(zipper PUBLIC gcc)
+
+target_link_options(zipper PUBLIC -static)
