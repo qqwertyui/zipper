@@ -3,22 +3,14 @@
 #include "Error.hpp"
 #include "Log.hpp"
 #include "Zip.hpp"
-
-namespace Version {
-constexpr int MAJOR = 0;
-constexpr int MINIOR = 1;
-char prepared_string[4];
-} // namespace Version
+#include "Version.hpp"
 
 DEFINE_string(f, "", "Input file");
 DEFINE_string(m, "", "Mode (list, extract)");
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract");
-
-  sprintf(Version::prepared_string, "%d.%d", Version::MAJOR, Version::MINIOR);
-  gflags::SetVersionString(Version::prepared_string);
-
+  gflags::SetVersionString(Version::STRING);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_f.empty() == true) {
     fputs(gflags::ProgramUsage(), stderr);
