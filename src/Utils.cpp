@@ -109,34 +109,34 @@ Data *zlib_inflate(Data *input) {
 }
 
 void create_directory(const char *filename) {
-  char *buf = new char[strlen(filename) + 1];
-  memset(buf, 0, strlen(filename + 1));
-  memcpy(buf, filename, strlen(filename));
+  unsigned int length = strlen(filename);
+  std::unique_ptr<char[]> buf = std::make_unique<char[]>(length+1);
+  memset(buf.get(), 0, length+1);
+  memcpy(buf.get(), filename, length);
 
-  char *tmp = buf;
+  char *tmp = buf.get();
   while ((tmp = strchr(tmp, '/')) != nullptr) {
     *tmp = '\0';
-    CreateDirectory(buf, NULL);
+    CreateDirectory(buf.get(), nullptr);
     *tmp = '/';
     tmp++;
   }
-  delete[] buf;
 }
 
-char *copy_string(const char *text) {
-  size_t length = strlen(text);
-  char *copy = new char[length + 1];
-  memset(copy, 0, length + 1);
-  memcpy(copy, text, length);
+std::unique_ptr<char[]> copy_string(const char *text) {
+  unsigned int length = strlen(text);
+  std::unique_ptr<char[]> new_string = std::make_unique<char[]>(length+1);
+  memset(new_string.get(), 0, length+1);
+  memcpy(new_string.get(), text, length);
 
-  return copy;
+  return new_string;
 }
 
-char *copy_string(const char *text, unsigned int length) {
-  char *copy = new char[length + 1];
-  memset(copy, 0, length + 1);
-  memcpy(copy, text, length);
+std::unique_ptr<char[]> copy_string(const char *text, unsigned int length) {
+  std::unique_ptr<char[]> new_string = std::make_unique<char[]>(length+1);
+  memset(new_string.get(), 0, length+1);
+  memcpy(new_string.get(), text, length);
 
-  return copy;
+  return new_string;
 }
 } // namespace Utils

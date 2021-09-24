@@ -24,16 +24,18 @@ int main(int argc, char **argv) {
     operation = Zip::Job::LIST;
   }
 
-  Zip archive(FLAGS_f);
-  if (archive.is_good() == false) {
-    Log::error("Invalid ZIP archive");
+  Zip *archive = nullptr;
+  try {
+    archive = new Zip(FLAGS_f);
+  } catch(const std::runtime_error &e) {
+    Log::errorf("Invalid ZIP archive: %s\n", e.what());
     return Error::INVALID_ZIP;
   }
 
   if (operation == Zip::Job::LIST) {
-    archive.list_files();
+    archive->list_files();
   } else if (operation == Zip::Job::EXTRACT) {
-    unsigned int status = archive.extract_all();
+    unsigned int status = archive->extract_all();
     if (status != Status::OK) {
       if (status == Status::FILE_NOT_FOUND) {
         Log::error("File doesn't exist");

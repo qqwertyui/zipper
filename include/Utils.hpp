@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory>
 
 class DosTime {
 public:
@@ -53,10 +54,10 @@ Data *zlib_inflate(Data *input);
 void create_directory(const char *filename);
 
 /* Copies string, which needs to be deleted later */
-char *copy_string(const char *text);
+std::unique_ptr<char[]> copy_string(const char *text);
 
 /* Copies length characters from text, almost the same as above */
-char *copy_string(const char *text, unsigned int length);
+std::unique_ptr<char[]> copy_string(const char *text, unsigned int length);
 
 } // namespace Utils
 
