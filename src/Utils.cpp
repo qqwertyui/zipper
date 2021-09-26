@@ -86,7 +86,7 @@ Data *zlib_inflate(Data *input) {
 
   int status = inflateInit2(&infstream, -MAX_WBITS);
   if (status != Z_OK) {
-    return nullptr;
+    throw std::runtime_error("Decompression error");
   }
 
   unsigned char temp[CHUNKSZ] = {0};
@@ -98,7 +98,7 @@ Data *zlib_inflate(Data *input) {
     status = inflate(&infstream, Z_NO_FLUSH);
     if (status != Z_OK && status != Z_STREAM_END) {
       inflateEnd(&infstream);
-      return nullptr;
+      throw std::runtime_error("Decompression error");
     }
     have = CHUNKSZ - infstream.avail_out;
     container.add(temp, have);

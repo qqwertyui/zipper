@@ -136,12 +136,12 @@ ZipEntry* Zip::get_entry_by_filename(std::string filename) {
 }
 
 /* Extracts single file from archive */
-unsigned int Zip::extract(const char *filename) {
+void Zip::extract(const char *filename) {
   ZipEntry *e = this->get_entry_by_filename(filename);
   CDFH &cdfh = e->get_cdfh();
   LFH &lfh = e->get_lfh();
   if (e == nullptr) {
-    return Status::FILE_NOT_FOUND;
+    throw std::runtime_error("Couldn't find given file");
   }
 
   std::unique_ptr<char[]> filename_copy = Utils::copy_string(filename);
@@ -151,7 +151,6 @@ unsigned int Zip::extract(const char *filename) {
     // change to reference
   if (Zip::is_directory(&cdfh) == true) {
     Utils::create_directory(filename);
-    return Status::OK;
   } else if (dir_status != nullptr) {
     // pointer subtraction to calculate new string size
     size_t dirname_length = (dir_status - filename_copy_initial);
@@ -164,34 +163,24 @@ unsigned int Zip::extract(const char *filename) {
   }
 
   Data *d = Zip::decompress(&lfh);
-  if (d == nullptr) {
-    return Status::DECOMPRESS_ERROR;
-  }
 
   std::ofstream file(filename, std::ios::binary);
   if (file.good() == false) {
-    return Status::IO_ERROR;
+    throw std::runtime_error("IO error");
   }
   file.write((const char *)d->data, d->data_size);
   file.close();
-
-  return Status::OK;
 }
 
 /* Extracts all files from archive */
-unsigned int Zip::extract_all() {
+void Zip::extract_all() {
   for(ZipEntry *entry : this->entries) {
     CDFH &c_cdfh = entry->get_cdfh();
     std::unique_ptr<char[]> name = Utils::copy_string((const char *)c_cdfh.name, c_cdfh.name_length);
 
     printf("Extracting %s\n", name.get());
-    unsigned int status = this->extract(name.get());
-
-    if (status != Status::OK) {
-      return status;
-    }
+    this->extract(name.get());
   }
-  return Status::OK;
 }
 
 std::vector<ZipEntry*> Zip::get_entries() const {

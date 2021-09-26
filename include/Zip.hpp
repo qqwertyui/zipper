@@ -21,8 +21,8 @@ public:
   ~Zip();
 
   void list_files() const;
-  unsigned int extract(const char *filename);
-  unsigned int extract_all();
+  void extract(const char *filename);
+  void extract_all();
 
   Data *decompress(LFH *lfh);
   std::vector<ZipEntry*> get_entries() const;

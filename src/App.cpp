@@ -32,26 +32,17 @@ int main(int argc, char **argv) {
     return Error::INVALID_ZIP;
   }
 
-  if (operation == Zip::Job::LIST) {
-    archive->list_files();
-  } else if (operation == Zip::Job::EXTRACT) {
-    unsigned int status = archive->extract_all();
-    if (status != Status::OK) {
-      if (status == Status::FILE_NOT_FOUND) {
-        Log::error("File doesn't exist");
-      } else if (status == Status::DECOMPRESS_ERROR) {
-        Log::error("Decompression failure");
-      } else if (status == Status::IO_ERROR) {
-        Log::error("Input/Output error");
-      } else if (status == Status::WRONG_NAME) {
-        Log::error("Wrong file path");
-      } else {
-        Log::error("Unkown error");
-      }
-      return status;
+  try {
+    if (operation == Zip::Job::LIST) {
+      archive->list_files();
+    } else if (operation == Zip::Job::EXTRACT) {
+      archive->extract_all();
     }
-    Log::info("Sucesfully extraced file(s)");
+  } catch(const std::exception &e) {
+    Log::errorf("Failed to process the file: %s\n", e.what());
+    return Error::PROCESSING_ERROR;
   }
+  Log::info("Sucesfully extraced file(s)");
 
   return Error::OK;
 }
