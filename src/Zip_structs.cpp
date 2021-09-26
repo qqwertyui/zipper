@@ -42,6 +42,20 @@ LFH::LFH(unsigned char *data) {
   memcpy(this->data, data + sizeof(LFH_base) + offset, this->c_size);
 }
 
+LFH& LFH::operator=(const LFH &old) {
+    memcpy(this, &old, sizeof(LFH_base));
+    if(old.name != nullptr) {
+        this->name = new unsigned char[old.name_length];
+        memcpy(this->name, old.name, old.name_length);
+    } if(old.extra != nullptr) {
+        this->extra = new unsigned char[old.extra_length];
+        memcpy(this->extra, old.extra, old.extra_length);
+    }
+    this->data = new unsigned char[old.c_size];
+    memcpy(this->data, old.data, old.c_size);
+    return *this;
+}
+
 LFH::~LFH() {
   if (this->name != nullptr) {
     delete[] this->name;
@@ -78,6 +92,23 @@ CDFH::CDFH(unsigned char *data) {
     memcpy(this->comment, data + sizeof(CDFH_base) + offset, length);
   }
 }
+
+CDFH& CDFH::operator=(const CDFH &old) {
+    memcpy(this, &old, sizeof(CDFH_base));
+    
+    if(old.name != nullptr) {
+        this->name = new unsigned char[old.name_length];
+        memcpy(this->name, old.name, old.name_length);
+    } if(old.extra != nullptr) {
+        this->extra = new unsigned char[old.extra_length];
+        memcpy(this->extra, old.name, old.extra_length);
+    } if(old.comment != nullptr) {
+        this->comment = new unsigned char[old.comment_length];
+        memcpy(this->comment, old.comment, old.comment_length);
+    }
+    return *this;
+}
+
 
 CDFH::~CDFH() {
   if (this->name != nullptr) {

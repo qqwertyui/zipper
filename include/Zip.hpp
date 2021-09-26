@@ -4,50 +4,69 @@
 #include <cstddef>
 #include <vector>
 #include <memory>
+#include <tuple>
 #include <stdexcept>
 
 #include "Utils.hpp"
 #include "Zip_structs.hpp"
+
+class ZipEntry;
 
 class Zip {
 public:
   // enums
   enum Job { LIST = 1, EXTRACT = 2 };
 
-  typedef std::vector<CDFH*> vector_cdfh;
-  typedef std::vector<LFH*> vector_lfh;
-
-  // Structured zip data
-  std::unique_ptr<ECDR> ecdr;
-  std::vector<CDFH*> cdfhs;
-  std::vector<LFH*> lfhs;
-
-  // Raw zip data
-  std::vector<unsigned char> raw;
-
   Zip(std::string filename);
   ~Zip();
 
-  void list_files();
+  void list_files() const;
   unsigned int extract(const char *filename);
   unsigned int extract_all();
 
-  bool is_good() const;
   Data *decompress(LFH *lfh);
+  std::vector<ZipEntry*> get_entries() const;
 
 private:
   static bool is_directory(CDFH *entry);
 
   // routines for reading zip format fields
-  bool read_ecdr(std::vector<unsigned char> &data);
-  bool read_cdfhs(std::vector<unsigned char> &data);
-  bool read_lfhs(std::vector<unsigned char> &data);
+  std::unique_ptr<ECDR> read_ecdr(std::vector<unsigned char> &data);
+  std::vector<CDFH*> read_cdfhs(std::vector<unsigned char> &data);
+  std::vector<LFH*> read_lfhs(std::vector<unsigned char> &data, std::vector<CDFH*> &cdfhs);
 
   // Used internally by 'extract' method to find location of the file in
   // archive
   static LFH *find_file(const char *filename, std::vector<LFH *> &lfhs);
 
   CDFH *get_cdfh_from_lfh(LFH *lfh);
+
+  typedef std::vector<CDFH*> vector_cdfh;
+  typedef std::vector<LFH*> vector_lfh;
+
+  // Structured zip data
+  std::unique_ptr<ECDR> ecdr;
+  std::vector<ZipEntry*> entries;
+
+  ZipEntry* get_entry_by_filename(std::string filename);
+};
+
+class ZipEntry {
+public:
+    ZipEntry(const CDFH &cdfh, const LFH &lfh);
+    ~ZipEntry();
+
+    const std::string& get_name() const;
+    const DosTime& get_time() const;
+    CDFH& get_cdfh();
+    LFH& get_lfh();
+
+private:
+    std::string filename;
+    DosTime *time;
+
+    CDFH cdfh;
+    LFH lfh;
 };
 
 enum class Compression {

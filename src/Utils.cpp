@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <stdexcept>
 
 DosTime::DosTime(uint16_t time, uint16_t date) {
   this->second = (time & 0x1f) * 2;
@@ -139,4 +140,21 @@ std::unique_ptr<char[]> copy_string(const char *text, unsigned int length) {
 
   return new_string;
 }
+
+std::vector<unsigned char> read_file(std::string &filename, std::ifstream::openmode flags) {
+    std::ifstream file(filename, flags);
+	if(file.good() == false) {
+		throw std::runtime_error("File not found");
+	}
+	
+	file.seekg(0, std::ios_base::end);
+	unsigned int filesz = file.tellg();
+	file.seekg(0, std::ios_base::beg);
+
+    std::vector<unsigned char> result(filesz);
+    file.read((char*)result.data(), result.capacity());
+    file.close();
+    return result;
+}
+
 } // namespace Utils

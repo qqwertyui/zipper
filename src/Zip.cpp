@@ -7,79 +7,68 @@
 #include <fstream>
 
 Zip::Zip(std::string filename) {
-  std::ifstream file(filename, std::fstream::binary);
-  if (file.good() == false) {
-    throw std::runtime_error("Unable to open the file");
-  }
-  file.seekg(0, std::ifstream::end);
-  this->raw.resize(file.tellg());
-  file.seekg(0, std::ifstream::beg);
-
-  file.read((char*)this->raw.data(), this->raw.size());
-  file.close();
+  std::vector<unsigned char> raw = Utils::read_file(filename, std::ifstream::binary);
 
   // Check if given file size is large enought to hold ECDR
-  if (this->raw.size() < sizeof(ECDR_base)) {
+  if (raw.size() < sizeof(ECDR_base)) {
     throw std::runtime_error("Parsing error");
   }
 
-  if (Zip::read_ecdr(this->raw) == false) {
-    throw std::runtime_error("Couldn't read ECDR structure");
-  }
-  if (Zip::read_cdfhs(this->raw) == false) {
-    throw std::runtime_error("Couldn't read CDFHS structures");
-  }
-  if (Zip::read_lfhs(this->raw) == false) {
-    throw std::runtime_error("Couldn't read lfhs structures");
-  }
+  this->ecdr = Zip::read_ecdr(raw);
+  std::vector<CDFH*> cdfhs = Zip::read_cdfhs(raw);
+  std::vector<LFH*> lfhs = Zip::read_lfhs(raw, cdfhs);
 
-  if (this->lfhs.size() != this->cdfhs.size()) {
+  if (lfhs.size() != cdfhs.size()) {
     // We assume that number of lfs must be the same as the number of cdfh,
     // if it is not we assume it is broken
-    return;
+    throw std::runtime_error("Corrupted archive");
+  }
+
+  for(unsigned int i=0; i<cdfhs.size(); i++) {
+    this->entries.push_back(new ZipEntry(*cdfhs[i], *lfhs[i]));
   }
 }
 
-bool Zip::read_ecdr(std::vector<unsigned char> &data) {
+std::unique_ptr<ECDR> Zip::read_ecdr(std::vector<unsigned char> &data) {
   if (data.size() == 0) {
-    return false;
+    throw std::runtime_error("Couldn't read ECDR structure");
   }
   unsigned char *ptr = data.data() + data.size() - sizeof(ECDR_base);
-
   while (memcmp(ptr, (const void *)&Signature::ECDR, 4) != 0) {
     if (ptr <= data.data()) {
-      return false;
+      throw std::runtime_error("Unsupported/broken ECDR");
     }
     ptr--;
   }
-  this->ecdr = std::make_unique<ECDR>(ptr);
-  return true;
+  return std::make_unique<ECDR>(ptr);
 }
 
-bool Zip::read_cdfhs(std::vector<unsigned char> &data) {
+std::vector<CDFH*> Zip::read_cdfhs(std::vector<unsigned char> &data) {
+  std::vector<CDFH*> cdfhs;
   if (data.size() == 0 || this->ecdr == nullptr) {
-    return false;
+    throw std::runtime_error("Couldn't read CDFHs structures");
   }
   unsigned char *ptr = data.data() + this->ecdr->cd_offset;
 
   for (size_t i = 0; i < this->ecdr->number_entries; i++) {
     CDFH *t = new CDFH(ptr);
-    this->cdfhs.push_back(t);
+    cdfhs.push_back(t);
     ptr += sizeof(CDFH_base) + t->name_length + t->extra_length +
            t->comment_length;
   }
-  return true;
+  return cdfhs;
 }
 
-bool Zip::read_lfhs(std::vector<unsigned char> &data) {
-  if (data.size() == 0 || this->cdfhs.size() == 0) {
-    return false;
+std::vector<LFH*> Zip::read_lfhs(std::vector<unsigned char> &data, std::vector<CDFH*> &cdfhs) {
+  std::vector<LFH*> lfhs;
+  if (data.size() == 0 || cdfhs.size() == 0) {
+    throw std::runtime_error("Couldn't read LFHs structures");
   }
-  for(CDFH *c_cdfh : this->cdfhs) {
+  for(CDFH *c_cdfh : cdfhs) {
     unsigned char *ptr = data.data() + c_cdfh->lh_offset;
-    this->lfhs.push_back(new LFH(ptr));
+    lfhs.push_back(new LFH(ptr));
   }
-  return true;
+  return lfhs;
 }
 
 /* Checks if entry is directory by checking few characteristic values */
@@ -97,41 +86,20 @@ bool Zip::is_directory(CDFH *entry) {
   return false;
 }
 
-CDFH *Zip::get_cdfh_from_lfh(LFH *lfh) {
-  for (size_t i = 0; i < this->lfhs.size(); i++) {
-    LFH *tmp = this->lfhs[i];
-    if (tmp == lfh) {
-      return this->cdfhs[i];
-    }
-  }
-  return nullptr;
-}
-
 Zip::~Zip() {
-  for(CDFH *c : this->cdfhs) {
-      delete c;
-  }
-  for(LFH *c : this->lfhs) {
-      delete c;
+  for(ZipEntry *e : this->entries) {
+      delete e;
   }
 }
 
 /* Prints information about files, flag parameter may be used in the future */
-void Zip::list_files() {
+void Zip::list_files() const {
   puts("modification time | file");
   puts("----------------------------------");
-  for(CDFH *c_cdfh : this->cdfhs) {
-    if (Zip::is_directory(c_cdfh)) {
-      continue;
-    }
-    DosTime dt(c_cdfh->mod_time, c_cdfh->mod_date);
-    printf("%02d:%02d %02d-%02d-%d | ", dt.hour, dt.minute, dt.day, dt.month,
-           dt.year);
-
-    for (uint16_t j = 0; j < c_cdfh->name_length; j++) {
-      printf("%c", c_cdfh->name[j]);
-    }
-    puts("");
+  for(ZipEntry *e : this->entries) {
+    const DosTime &dt = e->get_time();
+    printf("%02d:%02d %02d-%02d-%d | ", dt.hour, dt.minute, dt.day, dt.month, dt.year);
+    printf("%s\n", e->get_name().c_str());
   }
 }
 
@@ -158,11 +126,21 @@ Data* Zip::decompress(LFH *lfh) {
   return d;
 }
 
+ZipEntry* Zip::get_entry_by_filename(std::string filename) {
+    for(ZipEntry *e : this->entries) {
+        if(e->get_name().compare(filename) == 0) {
+            return e;
+        }
+    }
+    return nullptr;
+}
+
 /* Extracts single file from archive */
 unsigned int Zip::extract(const char *filename) {
-  LFH *lfh = Zip::find_file(filename, this->lfhs);
-  CDFH *cdfh = Zip::get_cdfh_from_lfh(lfh);
-  if (lfh == nullptr) {
+  ZipEntry *e = this->get_entry_by_filename(filename);
+  CDFH &cdfh = e->get_cdfh();
+  LFH &lfh = e->get_lfh();
+  if (e == nullptr) {
     return Status::FILE_NOT_FOUND;
   }
 
@@ -170,7 +148,8 @@ unsigned int Zip::extract(const char *filename) {
   char *dir_status = Utils::find_last_of(filename_copy.get(), "/");
   char *filename_copy_initial = filename_copy.get();
 
-  if (Zip::is_directory(cdfh) == true) {
+    // change to reference
+  if (Zip::is_directory(&cdfh) == true) {
     Utils::create_directory(filename);
     return Status::OK;
   } else if (dir_status != nullptr) {
@@ -184,7 +163,7 @@ unsigned int Zip::extract(const char *filename) {
     Utils::create_directory(dirname.get());
   }
 
-  Data *d = Zip::decompress(lfh);
+  Data *d = Zip::decompress(&lfh);
   if (d == nullptr) {
     return Status::DECOMPRESS_ERROR;
   }
@@ -201,8 +180,9 @@ unsigned int Zip::extract(const char *filename) {
 
 /* Extracts all files from archive */
 unsigned int Zip::extract_all() {
-  for(CDFH *c_cdfh : this->cdfhs) {
-    std::unique_ptr<char[]> name = Utils::copy_string((const char *)c_cdfh->name, c_cdfh->name_length);
+  for(ZipEntry *entry : this->entries) {
+    CDFH &c_cdfh = entry->get_cdfh();
+    std::unique_ptr<char[]> name = Utils::copy_string((const char *)c_cdfh.name, c_cdfh.name_length);
 
     printf("Extracting %s\n", name.get());
     unsigned int status = this->extract(name.get());
@@ -212,4 +192,36 @@ unsigned int Zip::extract_all() {
     }
   }
   return Status::OK;
+}
+
+std::vector<ZipEntry*> Zip::get_entries() const {
+    return this->entries;
+}
+
+ZipEntry::ZipEntry(const CDFH &cdfh, const LFH &lfh) {
+    this->cdfh = cdfh;
+    this->lfh = lfh;
+
+    this->filename = Utils::copy_string((const char*)cdfh.name, cdfh.name_length).get();
+    this->time = new DosTime(cdfh.mod_time, cdfh.mod_date);
+}
+
+CDFH& ZipEntry::get_cdfh() {
+    return this->cdfh;
+}
+
+LFH& ZipEntry::get_lfh() {
+    return this->lfh;
+}
+
+ZipEntry::~ZipEntry() {
+    delete this->time;
+}
+
+const std::string& ZipEntry::get_name() const {
+    return this->filename;
+}
+
+const DosTime& ZipEntry::get_time() const {
+    return *this->time;
 }

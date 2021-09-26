@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 class DosTime {
 public:
@@ -59,6 +60,7 @@ std::unique_ptr<char[]> copy_string(const char *text);
 /* Copies length characters from text, almost the same as above */
 std::unique_ptr<char[]> copy_string(const char *text, unsigned int length);
 
+std::vector<unsigned char> read_file(std::string &filename, std::ifstream::openmode flags = std::ifstream::in);
 } // namespace Utils
 
 #endif

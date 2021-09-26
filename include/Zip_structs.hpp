@@ -2,7 +2,7 @@
 #define ZIP_STRUCTS
 
 #include <cstdint>
-#include <limits.h>
+#include <climits>
 
 /*
 Taken directly from APPNOTE.TXT, but is not used at all
@@ -48,8 +48,11 @@ public:
 
 class LFH : public LFH_base {
 public:
+  LFH() = default;
   LFH(unsigned char *data);
   ~LFH();
+
+  LFH& operator=(const LFH &old);
 
   unsigned char *name;
   unsigned char *extra;
@@ -87,8 +90,11 @@ public:
 
 class CDFH : public CDFH_base {
 public:
+  CDFH() = default;
   CDFH(unsigned char *data);
   ~CDFH();
+
+  CDFH& operator=(const CDFH& old);
 
   unsigned char *name;
   unsigned char *extra;
