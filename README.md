@@ -16,19 +16,18 @@ This project uses slightly modified version of gflags which can be found in this
 
 2. Build:
 git clone https://github.com/qqwertyui/zipper && cd zipper
+
 mkdir build && cd build
+
 cmake .. -G "Unix Makefiles"
+
 make
 
 3. Examples:
+- Get archive contents:
+
 ./zipper -f SDL2-2.0.16-win32-x64.zip
-modification time | file
-----------------------------------
-08:54 10-08-2021 | README-SDL.txt
-08:54 10-08-2021 | SDL2.dll
+
+- Unpack archive:
 
 ./zipper -f SDL2-2.0.16-win32-x64.zip -m extract
-Extracting README-SDL.txt
-Extracting SDL2.dll
-[+] Sucesfully extraced file(s)
-
