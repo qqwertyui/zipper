@@ -37,8 +37,7 @@ LFH::LFH(unsigned char *data) {
     memcpy(this->extra, data + sizeof(LFH_base) + offset, length);
     offset += length;
   }
-  this->data = new unsigned char[this->c_size]; // if c_size equals 0 it will
-                                                // succeed anyway
+  this->data = new unsigned char[this->c_size];
   memcpy(this->data, data + sizeof(LFH_base) + offset, this->c_size);
 }
 
