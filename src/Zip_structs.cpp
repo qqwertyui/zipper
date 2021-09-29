@@ -2,13 +2,14 @@
 
 #include <cstring>
 #include <zlib.h>
+#include <cstdio>
 
-ECDR::ECDR(unsigned char *data) {
+ECDR::ECDR(std::byte *data) {
   memcpy(this, data, sizeof(ECDR_base));
 
   this->comment = nullptr;
   if (this->comment_length > 0) {
-    this->comment = new unsigned char[this->comment_length];
+    this->comment = new char[this->comment_length];
     memcpy(this->comment, data + sizeof(ECDR_base), this->comment_length);
   }
 }
@@ -19,7 +20,7 @@ ECDR::~ECDR() {
   }
 }
 
-LFH::LFH(unsigned char *data) {
+LFH::LFH(std::byte *data) {
   memcpy(this, data, sizeof(LFH_base));
 
   this->name = this->extra = nullptr;
@@ -27,30 +28,32 @@ LFH::LFH(unsigned char *data) {
 
   length = this->name_length;
   if (length > 0) {
-    this->name = new unsigned char[length];
+    this->name = new char[length];
     memcpy(this->name, data + sizeof(LFH_base), length);
     offset += length;
   }
   length = this->extra_length;
   if (length > 0) {
-    this->extra = new unsigned char[length];
+    this->extra = new char[length];
     memcpy(this->extra, data + sizeof(LFH_base) + offset, length);
     offset += length;
   }
-  this->data = new unsigned char[this->c_size];
+  this->data = new std::byte[this->c_size];
   memcpy(this->data, data + sizeof(LFH_base) + offset, this->c_size);
 }
 
 LFH& LFH::operator=(const LFH &old) {
     memcpy(this, &old, sizeof(LFH_base));
+    this->name = this->extra = nullptr;
+
     if(old.name != nullptr) {
-        this->name = new unsigned char[old.name_length];
+        this->name = new char[old.name_length];
         memcpy(this->name, old.name, old.name_length);
     } if(old.extra != nullptr) {
-        this->extra = new unsigned char[old.extra_length];
+        this->extra = new char[old.extra_length];
         memcpy(this->extra, old.extra, old.extra_length);
     }
-    this->data = new unsigned char[old.c_size];
+    this->data = new std::byte[old.c_size];
     memcpy(this->data, old.data, old.c_size);
     return *this;
 }
@@ -62,10 +65,12 @@ LFH::~LFH() {
   if (this->extra != nullptr) {
     delete[] this->extra;
   }
-  delete[] this->data;
+  if(this->data != nullptr) {
+    delete[] this->data;
+  }
 }
 
-CDFH::CDFH(unsigned char *data) {
+CDFH::CDFH(std::byte *data) {
   memcpy(this, data, sizeof(CDFH_base));
 
   this->comment = this->extra = this->name = nullptr;
@@ -73,36 +78,40 @@ CDFH::CDFH(unsigned char *data) {
 
   length = this->name_length;
   if (length > 0) {
-    this->name = new unsigned char[length];
+    this->name = new char[length];
     memcpy(this->name, data + sizeof(CDFH_base), length);
     offset += length;
   }
 
   length = this->extra_length;
   if (length > 0) {
-    this->extra = new unsigned char[length];
+    this->extra = new char[length];
     memcpy(this->extra, data + sizeof(CDFH_base) + offset, length);
     offset += length;
   }
 
   length = this->comment_length;
   if (length > 0) {
-    this->comment = new unsigned char[length];
+    this->comment = new char[length];
+    printf("comment=%p\n", this->comment);
     memcpy(this->comment, data + sizeof(CDFH_base) + offset, length);
   }
+  printf("A:%p\n", this->comment);
 }
 
 CDFH& CDFH::operator=(const CDFH &old) {
+    #warning TODO: fix this (pointer) memcpy
     memcpy(this, &old, sizeof(CDFH_base));
-    
+    this->comment = this->extra = this->name = nullptr;
+
     if(old.name != nullptr) {
-        this->name = new unsigned char[old.name_length];
+        this->name = new char[old.name_length];
         memcpy(this->name, old.name, old.name_length);
     } if(old.extra != nullptr) {
-        this->extra = new unsigned char[old.extra_length];
-        memcpy(this->extra, old.name, old.extra_length);
+        this->extra = new char[old.extra_length];
+        memcpy(this->extra, old.extra, old.extra_length);
     } if(old.comment != nullptr) {
-        this->comment = new unsigned char[old.comment_length];
+        this->comment = new char[old.comment_length];
         memcpy(this->comment, old.comment, old.comment_length);
     }
     return *this;

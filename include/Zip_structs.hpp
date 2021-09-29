@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <climits>
+#include <cstddef>
 
 /*
 Taken directly from APPNOTE.TXT, but is not used at all
@@ -49,16 +50,16 @@ public:
 class LFH : public LFH_base {
 public:
   LFH() = default;
-  LFH(unsigned char *data);
+  LFH(std::byte *data);
   ~LFH();
 
   LFH& operator=(const LFH &old);
 
-  unsigned char *name;
-  unsigned char *extra;
+  char *name;
+  char *extra;
 
   // actual data
-  unsigned char *data;
+  std::byte *data;
 };
 
 /*
@@ -91,14 +92,14 @@ public:
 class CDFH : public CDFH_base {
 public:
   CDFH() = default;
-  CDFH(unsigned char *data);
+  CDFH(std::byte *data);
   ~CDFH();
 
   CDFH& operator=(const CDFH& old);
 
-  unsigned char *name;
-  unsigned char *extra;
-  unsigned char *comment;
+  char *name;
+  char *extra;
+  char *comment;
 };
 
 /*
@@ -119,10 +120,10 @@ public:
 
 class ECDR : public ECDR_base {
 public:
-  ECDR(unsigned char *data);
+  ECDR(std::byte *data);
   ~ECDR();
 
-  unsigned char *comment;
+  char *comment;
 };
 
 namespace Signature {

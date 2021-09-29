@@ -7,7 +7,7 @@
 #include <fstream>
 
 Zip::Zip(std::string filename) {
-  std::vector<unsigned char> raw = Utils::read_file(filename, std::ifstream::binary);
+  std::vector<std::byte> raw = Utils::read_file(filename, std::ifstream::binary);
 
   // Check if given file size is large enought to hold ECDR
   if (raw.size() < sizeof(ECDR_base)) {
@@ -29,11 +29,11 @@ Zip::Zip(std::string filename) {
   }
 }
 
-std::unique_ptr<ECDR> Zip::read_ecdr(std::vector<unsigned char> &data) {
+std::unique_ptr<ECDR> Zip::read_ecdr(std::vector<std::byte> &data) {
   if (data.size() == 0) {
     throw std::runtime_error("Couldn't read ECDR structure");
   }
-  unsigned char *ptr = data.data() + data.size() - sizeof(ECDR_base);
+  std::byte *ptr = data.data() + data.size() - sizeof(ECDR_base);
   while (memcmp(ptr, (const void *)&Signature::ECDR, 4) != 0) {
     if (ptr <= data.data()) {
       throw std::runtime_error("Unsupported/broken ECDR");
@@ -43,12 +43,12 @@ std::unique_ptr<ECDR> Zip::read_ecdr(std::vector<unsigned char> &data) {
   return std::make_unique<ECDR>(ptr);
 }
 
-std::vector<CDFH*> Zip::read_cdfhs(std::vector<unsigned char> &data) {
+std::vector<CDFH*> Zip::read_cdfhs(std::vector<std::byte> &data) {
   std::vector<CDFH*> cdfhs;
   if (data.size() == 0 || this->ecdr == nullptr) {
     throw std::runtime_error("Couldn't read CDFHs structures");
   }
-  unsigned char *ptr = data.data() + this->ecdr->cd_offset;
+  std::byte *ptr = data.data() + this->ecdr->cd_offset;
 
   for (size_t i = 0; i < this->ecdr->number_entries; i++) {
     CDFH *t = new CDFH(ptr);
@@ -59,13 +59,13 @@ std::vector<CDFH*> Zip::read_cdfhs(std::vector<unsigned char> &data) {
   return cdfhs;
 }
 
-std::vector<LFH*> Zip::read_lfhs(std::vector<unsigned char> &data, std::vector<CDFH*> &cdfhs) {
+std::vector<LFH*> Zip::read_lfhs(std::vector<std::byte> &data, std::vector<CDFH*> &cdfhs) {
   std::vector<LFH*> lfhs;
   if (data.size() == 0 || cdfhs.size() == 0) {
     throw std::runtime_error("Couldn't read LFHs structures");
   }
   for(CDFH *c_cdfh : cdfhs) {
-    unsigned char *ptr = data.data() + c_cdfh->lh_offset;
+    std::byte *ptr = data.data() + c_cdfh->lh_offset;
     lfhs.push_back(new LFH(ptr));
   }
   return lfhs;
@@ -103,30 +103,21 @@ void Zip::list_files() const {
   }
 }
 
-/* Loops through lfhs and looks for given filename */
-LFH *Zip::find_file(const char *filename, std::vector<LFH *> &lfhs) {
-  for(LFH *c_lfh : lfhs) {
-    if (memcmp((const char *)c_lfh->name, filename, strlen(filename)) == 0) {
-      return c_lfh;
-    }
-  }
-  return nullptr;
-}
-
 /* Detects compression method and tries to decompress the archive */
-Data* Zip::decompress(LFH *lfh) {
+std::vector<std::byte> Zip::decompress(LFH *lfh) {
+  std::vector<std::byte> output;
   Data input(lfh->data, lfh->c_size);
-  Data *d = nullptr;
   Compression method = (Compression)lfh->c_method;
   if (method == Compression::DEFLATE) {
-    d = Utils::zlib_inflate(&input);
+    output = Utils::zlib_inflate(&input);
   } else if (method == Compression::STORED) {
-    d = new Data(lfh->data, lfh->c_size);
+    output.resize(lfh->c_size);
+    memcpy(output.data(), lfh->data, lfh->c_size);
   }
-  return d;
+  return output;
 }
 
-ZipEntry* Zip::get_entry_by_filename(std::string filename) {
+ZipEntry* Zip::get_entry_by_filename(std::string &filename) {
     for(ZipEntry *e : this->entries) {
         if(e->get_name().compare(filename) == 0) {
             return e;
@@ -136,7 +127,7 @@ ZipEntry* Zip::get_entry_by_filename(std::string filename) {
 }
 
 /* Extracts single file from archive */
-void Zip::extract(const char *filename) {
+void Zip::extract(std::string &filename) {
   ZipEntry *e = this->get_entry_by_filename(filename);
   CDFH &cdfh = e->get_cdfh();
   LFH &lfh = e->get_lfh();
@@ -144,42 +135,37 @@ void Zip::extract(const char *filename) {
     throw std::runtime_error("Couldn't find given file");
   }
 
-  std::unique_ptr<char[]> filename_copy = Utils::copy_string(filename);
-  char *dir_status = Utils::find_last_of(filename_copy.get(), "/");
-  char *filename_copy_initial = filename_copy.get();
+  std::string filename_copy = filename;
+  char *nested_directory = Utils::find_last_of(filename_copy.data(), "/");
+  char *filename_copy_initial = filename_copy.data();
 
-    // change to reference
   if (Zip::is_directory(&cdfh) == true) {
     Utils::create_directory(filename);
-  } else if (dir_status != nullptr) {
+    return;
+  } else if (nested_directory != nullptr) {
     // pointer subtraction to calculate new string size
-    size_t dirname_length = (dir_status - filename_copy_initial);
+    size_t dirname_length = (nested_directory - filename_copy_initial);
 
-    // copy_string cuts the part of path so it can create directory tree
+    // split path and basename
     // e.g. myfiles/directory1/directory2/secret.txt
-    // it must take all before secret.txt and create it
-    std::unique_ptr<char[]> dirname = Utils::copy_string(filename, dirname_length);
-    Utils::create_directory(dirname.get());
+    // path: myfiles/directory1/directory2/ basename: secret.txt
+    // then, create path and put the file in it
+    std::string dirname = filename.substr(0, dirname_length);
+    Utils::create_directory(dirname);
   }
 
-  Data *d = Zip::decompress(&lfh);
-
-  std::ofstream file(filename, std::ios::binary);
-  if (file.good() == false) {
-    throw std::runtime_error("IO error");
-  }
-  file.write((const char *)d->data, d->data_size);
-  file.close();
+  std::vector<std::byte> data = Zip::decompress(&lfh);
+  Utils::write_file(filename, data);
 }
 
 /* Extracts all files from archive */
 void Zip::extract_all() {
   for(ZipEntry *entry : this->entries) {
     CDFH &c_cdfh = entry->get_cdfh();
-    std::unique_ptr<char[]> name = Utils::copy_string((const char *)c_cdfh.name, c_cdfh.name_length);
+    std::string name = entry->get_name();
 
-    printf("Extracting %s\n", name.get());
-    this->extract(name.get());
+    printf("Extracting %s\n", name.c_str());
+    this->extract(name);
   }
 }
 
@@ -191,7 +177,7 @@ ZipEntry::ZipEntry(const CDFH &cdfh, const LFH &lfh) {
     this->cdfh = cdfh;
     this->lfh = lfh;
 
-    this->filename = Utils::copy_string((const char*)cdfh.name, cdfh.name_length).get();
+    this->filename = std::string(cdfh.name, cdfh.name_length);
     this->time = new DosTime(cdfh.mod_time, cdfh.mod_date);
 }
 

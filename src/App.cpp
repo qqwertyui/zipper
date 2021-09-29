@@ -37,12 +37,12 @@ int main(int argc, char **argv) {
       archive->list_files();
     } else if (operation == Zip::Job::EXTRACT) {
       archive->extract_all();
+      Log::info("Sucesfully extraced file(s)");
     }
   } catch(const std::exception &e) {
     Log::errorf("Failed to process the file: %s\n", e.what());
     return Error::PROCESSING_ERROR;
   }
-  Log::info("Sucesfully extraced file(s)");
 
   return Error::OK;
 }

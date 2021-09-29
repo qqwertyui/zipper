@@ -18,7 +18,7 @@ DosTime::DosTime(uint16_t time, uint16_t date) {
   this->year = 1980 + (date >> 9);
 }
 
-Data::Data(unsigned char *data, unsigned int data_size) {
+Data::Data(std::byte *data, unsigned int data_size) {
   this->data = data;
   this->data_size = data_size;
 }
@@ -41,8 +41,8 @@ Chunk_manager::~Chunk_manager() {
   }
 }
 
-void Chunk_manager::add(unsigned char *data, unsigned int data_size) {
-  unsigned char *tmp = new unsigned char[data_size];
+void Chunk_manager::add(std::byte *data, unsigned int data_size) {
+  std::byte *tmp = new std::byte[data_size];
   memcpy(tmp, data, data_size);
 
   this->entry.push_back(new Data(tmp, data_size));
@@ -50,8 +50,8 @@ void Chunk_manager::add(unsigned char *data, unsigned int data_size) {
   this->total_bytes += data_size;
 }
 
-unsigned char *Chunk_manager::to_bytearray() {
-  unsigned char *bytes = new unsigned char[this->total_bytes];
+std::byte *Chunk_manager::to_bytearray() {
+  std::byte *bytes = new std::byte[this->total_bytes];
   unsigned int counter = 0;
   for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
        i++) {
@@ -73,7 +73,7 @@ char *find_last_of(const char *text, const char *delimiter) {
   return stripped_name;
 }
 
-Data *zlib_inflate(Data *input) {
+std::vector<std::byte> zlib_inflate(Data *input) {
   constexpr unsigned int CHUNKSZ = 0x1000;
   Chunk_manager container;
   z_stream infstream;
@@ -82,18 +82,18 @@ Data *zlib_inflate(Data *input) {
   infstream.zfree = Z_NULL;
   infstream.opaque = Z_NULL;
   infstream.avail_in = (uInt)input->data_size;
-  infstream.next_in = input->data;
+  infstream.next_in = (Bytef*)input->data;
 
   int status = inflateInit2(&infstream, -MAX_WBITS);
   if (status != Z_OK) {
     throw std::runtime_error("Decompression error");
   }
 
-  unsigned char temp[CHUNKSZ] = {0};
+  std::byte temp[CHUNKSZ] = {};
   int have = 0;
   do {
     infstream.avail_out = CHUNKSZ;
-    infstream.next_out = temp;
+    infstream.next_out = (Bytef*)temp;
 
     status = inflate(&infstream, Z_NO_FLUSH);
     if (status != Z_OK && status != Z_STREAM_END) {
@@ -105,56 +105,46 @@ Data *zlib_inflate(Data *input) {
   } while (status != Z_STREAM_END);
 
   inflateEnd(&infstream);
-  Data *d = new Data(container.to_bytearray(), container.total_bytes);
-  return d;
+  std::vector<std::byte> result(container.total_bytes);
+  memcpy(result.data(), container.to_bytearray(), container.total_bytes);
+  return result;
 }
 
-void create_directory(const char *filename) {
-  unsigned int length = strlen(filename);
-  std::unique_ptr<char[]> buf = std::make_unique<char[]>(length+1);
-  memset(buf.get(), 0, length+1);
-  memcpy(buf.get(), filename, length);
-
-  char *tmp = buf.get();
+void create_directory(std::string &filename) {
+    #warning does it copy or just assign/move?
+  std::string buf = filename;
+  char *tmp = buf.data();
   while ((tmp = strchr(tmp, '/')) != nullptr) {
     *tmp = '\0';
-    CreateDirectory(buf.get(), nullptr);
+    CreateDirectory(buf.data(), nullptr);
     *tmp = '/';
     tmp++;
   }
 }
 
-std::unique_ptr<char[]> copy_string(const char *text) {
-  unsigned int length = strlen(text);
-  std::unique_ptr<char[]> new_string = std::make_unique<char[]>(length+1);
-  memset(new_string.get(), 0, length+1);
-  memcpy(new_string.get(), text, length);
-
-  return new_string;
-}
-
-std::unique_ptr<char[]> copy_string(const char *text, unsigned int length) {
-  std::unique_ptr<char[]> new_string = std::make_unique<char[]>(length+1);
-  memset(new_string.get(), 0, length+1);
-  memcpy(new_string.get(), text, length);
-
-  return new_string;
-}
-
-std::vector<unsigned char> read_file(std::string &filename, std::ifstream::openmode flags) {
+std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags) {
     std::ifstream file(filename, flags);
 	if(file.good() == false) {
-		throw std::runtime_error("File not found");
+		throw std::runtime_error("File reading error");
 	}
 	
 	file.seekg(0, std::ios_base::end);
 	unsigned int filesz = file.tellg();
 	file.seekg(0, std::ios_base::beg);
 
-    std::vector<unsigned char> result(filesz);
+    std::vector<std::byte> result(filesz);
     file.read((char*)result.data(), result.capacity());
     file.close();
     return result;
+}
+
+void write_file(std::string &filename, std::vector<std::byte> &data, std::ofstream::openmode flags) {
+    std::ofstream file(filename, flags);
+    if(file.good() == false) {
+        throw std::runtime_error("File writing error");
+    }
+    file.write((char*)data.data(), data.size());
+    file.close();
 }
 
 } // namespace Utils

@@ -6,6 +6,7 @@
 #include <vector>
 #include <memory>
 #include <fstream>
+#include <cstddef>
 
 class DosTime {
 public:
@@ -22,10 +23,10 @@ public:
 
 class Data {
 public:
-  unsigned char *data;
+  std::byte *data;
   unsigned int data_size;
 
-  Data(unsigned char *data, unsigned int data_size);
+  Data(std::byte *data, unsigned int data_size);
   Data();
 };
 
@@ -40,8 +41,8 @@ public:
   Chunk_manager();
   ~Chunk_manager();
 
-  void add(unsigned char *data, unsigned int datasz);
-  unsigned char *to_bytearray();
+  void add(std::byte *data, unsigned int datasz);
+  std::byte *to_bytearray();
 };
 
 namespace Utils {
@@ -49,18 +50,14 @@ namespace Utils {
  * input string */
 char *find_last_of(const char *text, const char *delimiter);
 
-Data *zlib_inflate(Data *input);
+std::vector<std::byte> zlib_inflate(Data *input);
 
 /* Creates directory tree */
-void create_directory(const char *filename);
+void create_directory(std::string &filename);
 
-/* Copies string, which needs to be deleted later */
-std::unique_ptr<char[]> copy_string(const char *text);
+std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags = std::ifstream::in);
 
-/* Copies length characters from text, almost the same as above */
-std::unique_ptr<char[]> copy_string(const char *text, unsigned int length);
-
-std::vector<unsigned char> read_file(std::string &filename, std::ifstream::openmode flags = std::ifstream::in);
+void write_file(std::string &filename, std::vector<std::byte> &data, std::ofstream::openmode flags = std::ofstream::out);
 } // namespace Utils
 
 #endif
