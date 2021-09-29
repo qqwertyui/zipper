@@ -30,7 +30,7 @@ enum class gpbf {
 */
 
 /*
-        Local File Header
+  Local File Header
 */
 class LFH {
 public:
@@ -40,7 +40,7 @@ public:
   
   LFH& operator=(const LFH &old);
 
-  std::byte sig[4]; // 0x04034b50
+  std::byte sig[4];
   uint16_t ex_version;
   uint16_t gpbf;
   uint16_t c_method;
@@ -61,7 +61,7 @@ public:
 } __attribute__((packed));
 
 /*
-        Central Directory File Header
+  Central Directory File Header
 */
 class CDFH {
 public:
@@ -71,7 +71,7 @@ public:
 
   CDFH& operator=(const CDFH& old);
 
-  std::byte sig[4]; // 0x02014b50
+  std::byte sig[4];
   uint16_t version_made;
   uint16_t version_needed;
   uint16_t gpbf;
@@ -100,11 +100,14 @@ public:
 
 
 /*
-        End of Central Directory Record
+  End of Central Directory Record
 */
-class ECDR_base {
+class ECDR {
 public:
-  uint8_t sig[4]; // 0x06054b50
+  ECDR(std::vector<std::byte> &data);
+  ~ECDR();
+
+  std::byte sig[4];
   uint16_t disk_num;
   uint16_t disk_num_cdfh;
   uint16_t number_entries_disk;
@@ -113,28 +116,16 @@ public:
   uint32_t cd_offset;
   uint16_t comment_length;
 
+  char *comment = nullptr;
+
+  static constexpr int FIXED_FIELDS_LENGTH = 22;
 } __attribute__((packed));
 
-class ECDR : public ECDR_base {
-public:
-  ECDR(std::byte *data);
-  ~ECDR();
-
-  char *comment;
-};
 
 namespace Signature {
-constexpr unsigned int LFH = 0x04034b50;
-constexpr unsigned int CDFH = 0x02014b50;
-constexpr unsigned int ECDR = 0x06054b50;
+  constexpr unsigned int LFH = 0x04034b50;
+  constexpr unsigned int CDFH = 0x02014b50;
+  constexpr unsigned int ECDR = 0x06054b50;
 }; // namespace Signature
-
-namespace Status {
-constexpr unsigned int OK = 0;
-constexpr unsigned int DECOMPRESS_ERROR = 1;
-constexpr unsigned int IO_ERROR = 2;
-constexpr unsigned int WRONG_NAME = 3;
-constexpr unsigned int FILE_NOT_FOUND = UINT_MAX;
-} // namespace Status
 
 #endif

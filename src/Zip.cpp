@@ -10,7 +10,7 @@ Zip::Zip(std::string filename) {
   std::vector<std::byte> raw = Utils::read_file(filename, std::ifstream::binary);
 
   // Check if given file size is large enought to hold ECDR
-  if (raw.size() < sizeof(ECDR_base)) {
+  if (raw.size() < sizeof(ECDR::FIXED_FIELDS_LENGTH)) {
     throw std::runtime_error("Parsing error");
   }
 
@@ -33,14 +33,18 @@ std::unique_ptr<ECDR> Zip::read_ecdr(std::vector<std::byte> &data) {
   if (data.size() == 0) {
     throw std::runtime_error("Couldn't read ECDR structure");
   }
-  std::byte *ptr = data.data() + data.size() - sizeof(ECDR_base);
+  std::byte *ptr = data.data() + data.size() - ECDR::FIXED_FIELDS_LENGTH;
   while (memcmp(ptr, (const void *)&Signature::ECDR, 4) != 0) {
     if (ptr <= data.data()) {
-      throw std::runtime_error("Unsupported/broken ECDR");
+      throw std::runtime_error("Invalid ZIP file");
     }
     ptr--;
   }
-  return std::make_unique<ECDR>(ptr);
+  std::byte *begin = ptr;
+  std::byte *end = data.data() + data.size();
+
+  std::vector<std::byte> ecdr(begin, end);
+  return std::make_unique<ECDR>(ecdr);
 }
 
 std::vector<CDFH*> Zip::read_cdfhs(std::vector<std::byte> &data) {

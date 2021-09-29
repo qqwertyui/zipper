@@ -4,13 +4,12 @@
 #include <zlib.h>
 #include <cstdio>
 
-ECDR::ECDR(std::byte *data) {
-  memcpy(this, data, sizeof(ECDR_base));
+ECDR::ECDR(std::vector<std::byte> &data) {
+  memcpy(this, data.data(), ECDR::FIXED_FIELDS_LENGTH);
 
-  this->comment = nullptr;
   if (this->comment_length > 0) {
     this->comment = new char[this->comment_length];
-    memcpy(this->comment, data + sizeof(ECDR_base), this->comment_length);
+    memcpy(this->comment, data.data() + ECDR::FIXED_FIELDS_LENGTH, this->comment_length);
   }
 }
 
