@@ -58,14 +58,20 @@ public:
   std::byte *data = nullptr;
 
   static constexpr int FIXED_FIELDS_LENGTH = 30;
-};
+} __attribute__((packed));
 
 /*
         Central Directory File Header
 */
-class CDFH_base {
+class CDFH {
 public:
-  uint8_t sig[4]; // 0x02014b50
+  CDFH() = default;
+  CDFH(std::vector<std::byte> &data);
+  ~CDFH();
+
+  CDFH& operator=(const CDFH& old);
+
+  std::byte sig[4]; // 0x02014b50
   uint16_t version_made;
   uint16_t version_needed;
   uint16_t gpbf;
@@ -78,27 +84,20 @@ public:
   uint32_t uc_size;
   uint16_t name_length;
   uint16_t extra_length;
-
   uint16_t comment_length;
+
   uint16_t disk_num;
   uint16_t int_attributes;
   uint32_t ext_attributes;
   uint32_t lh_offset;
 
+  char *name = nullptr;
+  char *extra = nullptr;
+  char *comment = nullptr;
+
+  static constexpr int FIXED_FIELDS_LENGTH = 46;
 } __attribute__((packed));
 
-class CDFH : public CDFH_base {
-public:
-  CDFH() = default;
-  CDFH(std::byte *data);
-  ~CDFH();
-
-  CDFH& operator=(const CDFH& old);
-
-  char *name;
-  char *extra;
-  char *comment;
-};
 
 /*
         End of Central Directory Record

@@ -48,13 +48,17 @@ std::vector<CDFH*> Zip::read_cdfhs(std::vector<std::byte> &data) {
   if (data.size() == 0 || this->ecdr == nullptr) {
     throw std::runtime_error("Couldn't read CDFHs structures");
   }
-  std::byte *ptr = data.data() + this->ecdr->cd_offset;
-
+  
+  std::byte *begin = data.data() + this->ecdr->cd_offset;
+  std::byte *end = nullptr;
+  unsigned int offset = 0;
   for (size_t i = 0; i < this->ecdr->number_entries; i++) {
-    CDFH *t = new CDFH(ptr);
-    cdfhs.push_back(t);
-    ptr += sizeof(CDFH_base) + t->name_length + t->extra_length +
-           t->comment_length;
+    CDFH *tmp = (CDFH*)begin;
+    end = begin + CDFH::FIXED_FIELDS_LENGTH + tmp->name_length + tmp->extra_length + tmp->comment_length;
+
+    std::vector<std::byte> cdfh(begin, end);
+    cdfhs.push_back(new CDFH(cdfh));
+    begin = end;
   }
   return cdfhs;
 }
@@ -66,9 +70,11 @@ std::vector<LFH*> Zip::read_lfhs(std::vector<std::byte> &data, std::vector<CDFH*
   }
   for(CDFH *c_cdfh : cdfhs) {
     std::byte *begin = data.data() + c_cdfh->lh_offset;
-    std::byte *end = begin + LFH::FIXED_FIELDS_LENGTH + c_cdfh->c_size;
-    std::vector<std::byte> lfh(begin, end);
+    std::byte *end = begin + LFH::FIXED_FIELDS_LENGTH;
+    LFH *tmp = (LFH*)begin;
+    end += tmp->name_length + tmp->extra_length + c_cdfh->c_size;
 
+    std::vector<std::byte> lfh(begin, end);
     lfhs.push_back(new LFH(lfh));
   }
   return lfhs;
