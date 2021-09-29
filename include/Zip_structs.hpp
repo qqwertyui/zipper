@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <climits>
 #include <cstddef>
+#include <vector>
 
 /*
 Taken directly from APPNOTE.TXT, but is not used at all
@@ -31,9 +32,15 @@ enum class gpbf {
 /*
         Local File Header
 */
-class LFH_base {
+class LFH {
 public:
-  uint8_t sig[4]; // 0x04034b50
+  LFH() = default;
+  LFH(std::vector<std::byte> &data);
+  ~LFH();
+  
+  LFH& operator=(const LFH &old);
+
+  std::byte sig[4]; // 0x04034b50
   uint16_t ex_version;
   uint16_t gpbf;
   uint16_t c_method;
@@ -42,28 +49,18 @@ public:
   uint32_t crc32;
   uint32_t c_size;
   uint32_t uc_size;
+
   uint16_t name_length;
   uint16_t extra_length;
 
-} __attribute__((packed));
+  char *name = nullptr;
+  char *extra = nullptr;
+  std::byte *data = nullptr;
 
-class LFH : public LFH_base {
-public:
-  LFH() = default;
-  LFH(std::byte *data);
-  ~LFH();
-
-  LFH& operator=(const LFH &old);
-
-  char *name;
-  char *extra;
-
-  // actual data
-  std::byte *data;
+  static constexpr int FIXED_FIELDS_LENGTH = 30;
 };
 
 /*
-asd
         Central Directory File Header
 */
 class CDFH_base {

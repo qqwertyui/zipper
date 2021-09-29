@@ -65,8 +65,11 @@ std::vector<LFH*> Zip::read_lfhs(std::vector<std::byte> &data, std::vector<CDFH*
     throw std::runtime_error("Couldn't read LFHs structures");
   }
   for(CDFH *c_cdfh : cdfhs) {
-    std::byte *ptr = data.data() + c_cdfh->lh_offset;
-    lfhs.push_back(new LFH(ptr));
+    std::byte *begin = data.data() + c_cdfh->lh_offset;
+    std::byte *end = begin + LFH::FIXED_FIELDS_LENGTH + c_cdfh->c_size;
+    std::vector<std::byte> lfh(begin, end);
+
+    lfhs.push_back(new LFH(lfh));
   }
   return lfhs;
 }

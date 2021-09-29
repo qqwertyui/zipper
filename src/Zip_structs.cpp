@@ -20,31 +20,28 @@ ECDR::~ECDR() {
   }
 }
 
-LFH::LFH(std::byte *data) {
-  memcpy(this, data, sizeof(LFH_base));
+LFH::LFH(std::vector<std::byte> &data) {
+  memcpy(this, data.data(), LFH::FIXED_FIELDS_LENGTH);
 
-  this->name = this->extra = nullptr;
-  size_t length, offset = 0;
-
+  unsigned int length, offset = 0;
   length = this->name_length;
   if (length > 0) {
     this->name = new char[length];
-    memcpy(this->name, data + sizeof(LFH_base), length);
+    memcpy(this->name, data.data() + LFH::FIXED_FIELDS_LENGTH, length);
     offset += length;
   }
   length = this->extra_length;
   if (length > 0) {
     this->extra = new char[length];
-    memcpy(this->extra, data + sizeof(LFH_base) + offset, length);
+    memcpy(this->extra, data.data() + LFH::FIXED_FIELDS_LENGTH + offset, length);
     offset += length;
   }
   this->data = new std::byte[this->c_size];
-  memcpy(this->data, data + sizeof(LFH_base) + offset, this->c_size);
+  memcpy(this->data, data.data() + LFH::FIXED_FIELDS_LENGTH + offset, this->c_size);
 }
 
 LFH& LFH::operator=(const LFH &old) {
-    memcpy(this, &old, sizeof(LFH_base));
-    this->name = this->extra = nullptr;
+    memcpy(this, &old, LFH::FIXED_FIELDS_LENGTH);
 
     if(old.name != nullptr) {
         this->name = new char[old.name_length];
@@ -93,10 +90,8 @@ CDFH::CDFH(std::byte *data) {
   length = this->comment_length;
   if (length > 0) {
     this->comment = new char[length];
-    printf("comment=%p\n", this->comment);
     memcpy(this->comment, data + sizeof(CDFH_base) + offset, length);
   }
-  printf("A:%p\n", this->comment);
 }
 
 CDFH& CDFH::operator=(const CDFH &old) {
