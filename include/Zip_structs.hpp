@@ -36,6 +36,7 @@ class LFH {
 public:
   LFH() = default;
   LFH(std::vector<std::byte> &data);
+  LFH(const LFH &old);
   ~LFH();
   
   LFH& operator=(const LFH &old);

@@ -14,9 +14,7 @@ ECDR::ECDR(std::vector<std::byte> &data) {
 }
 
 ECDR::~ECDR() {
-  if (this->comment != nullptr) {
-    delete[] this->comment;
-  }
+  delete[] this->comment;
 }
 
 LFH::LFH(std::vector<std::byte> &data) {
@@ -39,7 +37,22 @@ LFH::LFH(std::vector<std::byte> &data) {
   memcpy(this->data, data.data() + LFH::FIXED_FIELDS_LENGTH + offset, this->c_size);
 }
 
+LFH::LFH(const LFH &old) {
+  memcpy(this, &old, LFH::FIXED_FIELDS_LENGTH);
+
+  if(old.name != nullptr) {
+    this->name = new char[old.name_length];
+    memcpy(this->name, old.name, old.name_length);
+  } if(old.extra != nullptr) {
+    this->extra = new char[old.extra_length];
+    memcpy(this->extra, old.extra, old.extra_length);
+  }
+  this->data = new std::byte[old.c_size];
+  memcpy(this->data, old.data, old.c_size);
+}
+
 LFH& LFH::operator=(const LFH &old) {
+
   memcpy(this, &old, LFH::FIXED_FIELDS_LENGTH);
 
   if(old.name != nullptr) {
@@ -55,15 +68,9 @@ LFH& LFH::operator=(const LFH &old) {
 }
 
 LFH::~LFH() {
-  if (this->name != nullptr) {
-    delete[] this->name;
-  }
-  if (this->extra != nullptr) {
-    delete[] this->extra;
-  }
-  if(this->data != nullptr) {
-    delete[] this->data;
-  }
+  delete[] this->name;
+  delete[] this->extra;
+  delete[] this->data;
 }
 
 CDFH::CDFH(std::vector<std::byte> &data) {
@@ -107,13 +114,7 @@ CDFH& CDFH::operator=(const CDFH &old) {
 
 
 CDFH::~CDFH() {
-  if (this->name != nullptr) {
-    delete[] this->name;
-  }
-  if (this->extra != nullptr) {
-    delete[] this->extra;
-  }
-  if (this->comment != nullptr) {
-    delete[] this->comment;
-  }
+  delete[] this->name;
+  delete[] this->extra;
+  delete[] this->comment;
 }
