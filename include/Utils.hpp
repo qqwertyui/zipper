@@ -53,7 +53,7 @@ char *find_last_of(const char *text, const char *delimiter);
 std::vector<std::byte> zlib_inflate(Data *input);
 
 /* Creates directory tree */
-void create_directory(std::string &filename);
+void create_directory(const std::string &filename);
 
 std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags = std::ifstream::in);
 

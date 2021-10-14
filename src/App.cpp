@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     return Error::NOT_ENOUGH_ARGS;
   }
 
-  Zip::Job operation = Zip::Job::LIST;
+  Zip::Job operation;
   if (FLAGS_m.compare("extract") == 0) {
     operation = Zip::Job::EXTRACT;
   } else {

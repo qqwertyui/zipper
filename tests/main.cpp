@@ -3,7 +3,7 @@
 #include <vector>
 #include "Zip.hpp"
 
-bool test_archive(std::string name, std::vector<std::string> &expected) {
+bool test_archive(std::string name, const std::vector<std::string> &expected) {
   Zip z(name);
   if(expected.size() != z.get_entries().size()) {
     return false;
@@ -18,7 +18,7 @@ bool test_archive(std::string name, std::vector<std::string> &expected) {
       }
     }
     if(ok == false) {
-      printf("Failed at: %s\n", current);
+      printf("Failed at: %s\n", current.c_str());
       return false;
     }
   }

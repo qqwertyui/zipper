@@ -32,11 +32,11 @@ Chunk_manager::Chunk_manager() {
 
 Chunk_manager::~Chunk_manager() {
   for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       i++) {
+       ++i) {
     delete[](*i)->data;
   }
   for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       i++) {
+       ++i) {
     delete (*i);
   }
 }
@@ -54,7 +54,7 @@ std::byte *Chunk_manager::to_bytearray() {
   std::byte *bytes = new std::byte[this->total_bytes];
   unsigned int counter = 0;
   for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       i++) {
+       ++i) {
     memcpy(bytes + counter, (*i)->data, (*i)->data_size);
     counter += (*i)->data_size;
   }
@@ -90,7 +90,6 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   }
 
   std::byte temp[CHUNKSZ] = {};
-  int have = 0;
   do {
     infstream.avail_out = CHUNKSZ;
     infstream.next_out = (Bytef*)temp;
@@ -100,7 +99,7 @@ std::vector<std::byte> zlib_inflate(Data *input) {
       inflateEnd(&infstream);
       throw std::runtime_error("Decompression error");
     }
-    have = CHUNKSZ - infstream.avail_out;
+    int have = CHUNKSZ - infstream.avail_out;
     container.add(temp, have);
   } while (status != Z_STREAM_END);
 
@@ -110,8 +109,7 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   return result;
 }
 
-void create_directory(std::string &filename) {
-    #warning does it copy or just assign/move?
+void create_directory(const std::string &filename) {
   std::string buf = filename;
   char *tmp = buf.data();
   while ((tmp = strchr(tmp, '/')) != nullptr) {

@@ -5,6 +5,7 @@
 #include <climits>
 #include <cstring>
 #include <fstream>
+#include <algorithm>
 
 Zip::Zip(std::string filename) {
   std::vector<std::byte> raw = Utils::read_file(filename, std::ifstream::binary);
@@ -55,7 +56,6 @@ std::vector<CDFH*> Zip::read_cdfhs(std::vector<std::byte> &data) {
   
   std::byte *begin = data.data() + this->ecdr->cd_offset;
   std::byte *end = nullptr;
-  unsigned int offset = 0;
   for (size_t i = 0; i < this->ecdr->number_entries; i++) {
     CDFH *tmp = (CDFH*)begin;
     end = begin + CDFH::FIXED_FIELDS_LENGTH + tmp->name_length + tmp->extra_length + tmp->comment_length;
@@ -131,22 +131,25 @@ std::vector<std::byte> Zip::decompress(LFH *lfh) {
 }
 
 ZipEntry* Zip::get_entry_by_filename(std::string &filename) {
-    for(ZipEntry *e : this->entries) {
-        if(e->get_name().compare(filename) == 0) {
-            return e;
-        }
-    }
+  auto it = std::find_if(this->entries.begin(), this->entries.end(), 
+    [&filename](ZipEntry *e) { 
+      return (e->get_name().compare(filename) == 0) ? true : false; 
+    });
+
+  if(it == this->entries.end()) {
     return nullptr;
+  }
+  return *it;
 }
 
 /* Extracts single file from archive */
 void Zip::extract(std::string &filename) {
   ZipEntry *e = this->get_entry_by_filename(filename);
-  CDFH &cdfh = e->get_cdfh();
-  LFH &lfh = e->get_lfh();
   if (e == nullptr) {
     throw std::runtime_error("Couldn't find given file");
   }
+  CDFH &cdfh = e->get_cdfh();
+  LFH &lfh = e->get_lfh();
 
   std::string filename_copy = filename;
   char *nested_directory = Utils::find_last_of(filename_copy.data(), "/");
