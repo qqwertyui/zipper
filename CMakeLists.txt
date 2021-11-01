@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19.4)
+cmake_minimum_required(VERSION 3.18.4)
 project(Zipper VERSION 0.2)
 
 set(CMAKE_CXX_STANDARD 17)

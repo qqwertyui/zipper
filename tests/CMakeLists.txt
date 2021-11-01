@@ -5,6 +5,7 @@ add_executable(zipper_tests ${SRC_TEST_FILES})
 target_link_libraries(zipper_tests PUBLIC zipcore)
 target_link_libraries(zipper_tests PUBLIC gtest)
 target_link_libraries(zipper_tests PUBLIC gtest_main)
+target_link_libraries(zipper_tests PUBLIC pthread)
 
 foreach(current_zip ${ZIP_TEST_SAMPLES})
     add_custom_command(

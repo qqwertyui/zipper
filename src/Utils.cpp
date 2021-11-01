@@ -1,6 +1,5 @@
 #include "Utils.hpp"
 
-#include <windows.h>
 #include <zlib.h>
 
 #include <cstdio>
@@ -107,17 +106,6 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   std::vector<std::byte> result(container.total_bytes);
   memcpy(result.data(), container.to_bytearray(), container.total_bytes);
   return result;
-}
-
-void create_directory(const std::string &filename) {
-  std::string buf = filename;
-  char *tmp = buf.data();
-  while ((tmp = strchr(tmp, '/')) != nullptr) {
-    *tmp = '\0';
-    CreateDirectory(buf.data(), nullptr);
-    *tmp = '/';
-    tmp++;
-  }
 }
 
 std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags) {

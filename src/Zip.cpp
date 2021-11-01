@@ -1,11 +1,10 @@
 #include "Zip.hpp"
 
-#include <windows.h>
-
 #include <climits>
 #include <cstring>
 #include <fstream>
 #include <algorithm>
+#include <filesystem>
 
 Zip::Zip(std::string filename) {
   std::vector<std::byte> raw = Utils::read_file(filename, std::ifstream::binary);
@@ -156,7 +155,7 @@ void Zip::extract(std::string &filename) {
   char *filename_copy_initial = filename_copy.data();
 
   if (Zip::is_directory(&cdfh) == true) {
-    Utils::create_directory(filename);
+    std::filesystem::create_directories(filename);
     return;
   } else if (nested_directory != nullptr) {
     // pointer subtraction to calculate new string size
@@ -167,7 +166,9 @@ void Zip::extract(std::string &filename) {
     // path: myfiles/directory1/directory2/ basename: secret.txt
     // then, create path and put the file in it
     std::string dirname = filename.substr(0, dirname_length);
-    Utils::create_directory(dirname);
+    if(dirname.empty() == false) {
+      std::filesystem::create_directories(filename);
+    }
   }
 
   std::vector<std::byte> data = Zip::decompress(&lfh);

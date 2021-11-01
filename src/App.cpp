@@ -9,7 +9,7 @@ DEFINE_string(f, "", "Input file");
 DEFINE_string(m, "", "Mode (list, extract)");
 
 int main(int argc, char **argv) {
-  gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract");
+  gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract\n");
   gflags::SetVersionString(Version::STRING);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_f.empty() == true) {
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
       archive->list_files();
     } else if (operation == Zip::Job::EXTRACT) {
       archive->extract_all();
-      Log::info("Sucesfully extraced file(s)");
+      Log::info("Sucesfully extraced file(s)\n");
     }
   } catch(const std::exception &e) {
     Log::errorf("Failed to process the file: %s\n", e.what());
