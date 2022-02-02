@@ -1,12 +1,11 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
+#pragma once
 
+#include <cstddef>
 #include <cstdint>
+#include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include <fstream>
-#include <cstddef>
 
 class DosTime {
 public:
@@ -52,9 +51,10 @@ char *find_last_of(const char *text, const char *delimiter);
 
 std::vector<std::byte> zlib_inflate(Data *input);
 
-std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags = std::ifstream::in);
+std::vector<std::byte>
+read_file(std::string &filename,
+          std::ifstream::openmode flags = std::ifstream::in);
 
-void write_file(std::string &filename, std::vector<std::byte> &data, std::ofstream::openmode flags = std::ofstream::out);
+void write_file(std::string &filename, std::vector<std::byte> &data,
+                std::ofstream::openmode flags = std::ofstream::out);
 } // namespace Utils
-
-#endif

@@ -1,12 +1,10 @@
 #include <gflags/gflags.h>
 
 #include "Error.hpp"
+#include "Gflags_defines.hpp"
 #include "Log.hpp"
-#include "Zip.hpp"
 #include "Version.hpp"
-
-DEFINE_string(f, "", "Input file");
-DEFINE_string(m, "", "Mode (list, extract)");
+#include "Zip.hpp"
 
 int main(int argc, char **argv) {
   gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract\n");
@@ -17,17 +15,15 @@ int main(int argc, char **argv) {
     return Error::NOT_ENOUGH_ARGS;
   }
 
-  Zip::Job operation;
+  Zip::Job operation{Zip::Job::LIST};
   if (FLAGS_m.compare("extract") == 0) {
     operation = Zip::Job::EXTRACT;
-  } else {
-    operation = Zip::Job::LIST;
   }
 
-  Zip *archive = nullptr;
+  Zip *archive{nullptr};
   try {
     archive = new Zip(FLAGS_f);
-  } catch(const std::runtime_error &e) {
+  } catch (const std::runtime_error &e) {
     Log::errorf("Invalid ZIP archive: %s\n", e.what());
     return Error::INVALID_ZIP;
   }
@@ -39,7 +35,7 @@ int main(int argc, char **argv) {
       archive->extract_all();
       Log::info("Sucesfully extraced file(s)\n");
     }
-  } catch(const std::exception &e) {
+  } catch (const std::exception &e) {
     Log::errorf("Failed to process the file: %s\n", e.what());
     return Error::PROCESSING_ERROR;
   }

@@ -1,9 +1,8 @@
-#ifndef ZIP_STRUCTS
-#define ZIP_STRUCTS
+#pragma once
 
-#include <cstdint>
 #include <climits>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 /*
@@ -38,8 +37,8 @@ public:
   LFH(std::vector<std::byte> &data);
   LFH(const LFH &old);
   ~LFH();
-  
-  LFH& operator=(const LFH &old);
+
+  LFH &operator=(const LFH &old);
 
   std::byte sig[4];
   uint16_t ex_version;
@@ -70,7 +69,7 @@ public:
   CDFH(std::vector<std::byte> &data);
   ~CDFH();
 
-  CDFH& operator=(const CDFH& old);
+  CDFH &operator=(const CDFH &old);
 
   std::byte sig[4];
   uint16_t version_made;
@@ -99,7 +98,6 @@ public:
   static constexpr int FIXED_FIELDS_LENGTH = 46;
 } __attribute__((packed));
 
-
 /*
   End of Central Directory Record
 */
@@ -122,11 +120,8 @@ public:
   static constexpr int FIXED_FIELDS_LENGTH = 22;
 } __attribute__((packed));
 
-
 namespace Signature {
-  constexpr unsigned int LFH = 0x04034b50;
-  constexpr unsigned int CDFH = 0x02014b50;
-  constexpr unsigned int ECDR = 0x06054b50;
+constexpr unsigned int LFH = 0x04034b50;
+constexpr unsigned int CDFH = 0x02014b50;
+constexpr unsigned int ECDR = 0x06054b50;
 }; // namespace Signature
-
-#endif

@@ -1,5 +1,8 @@
+#pragma once
+// clang-format off
 namespace Version {
-    constexpr int MAJOR = @Zipper_VERSION_MAJOR@;
-    constexpr int MINOR = @Zipper_VERSION_MINOR@;
-    constexpr const char *STRING = "@Zipper_VERSION_MAJOR@.@Zipper_VERSION_MINOR@";
-}
+constexpr int MAJOR = @Zipper_VERSION_MAJOR@;
+constexpr int MINOR = @Zipper_VERSION_MINOR@;
+constexpr const char *STRING = "@Zipper_VERSION_MAJOR@.@Zipper_VERSION_MINOR@";
+// clang-format on
+} // namespace Version
