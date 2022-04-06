@@ -9,6 +9,26 @@
 
 namespace zipcxx {
 
+Zip::Zip(const std::string &filename) {
+  auto rawBytes{utils::readFile(filename, std::ifstream::binary)};
+  checkIfValidArchive(rawBytes);
+
+  this->ecdr = Zip::readEcdr(rawBytes);
+  auto cdfhs{Zip::readCdfhs(rawBytes)};
+  auto lfhs{Zip::readLfhs(rawBytes, cdfhs)};
+
+  if (lfhs.size() != cdfhs.size()) {
+    // We assume that number of lfhs must be the same as the number of cdfhs,
+    // if it is not we assume it is broken
+    throw std::runtime_error("Corrupted archive");
+  }
+
+  this->entries.reserve(cdfhs.size());
+  for (unsigned int i = 0; i < cdfhs.size(); i++) {
+    this->entries.emplace_back(cdfhs[i], lfhs[i]);
+  }
+}
+
 bool Zip::isValidLFHSignature(const std::vector<std::byte> &inputSignature) {
   const auto lfhSignature{LFH{}.getSignature()};
   return std::equal(lfhSignature.begin(), lfhSignature.end(),
@@ -25,26 +45,6 @@ void Zip::checkIfValidArchive(const std::vector<std::byte> &rawBytes) {
   }
   if (rawBytes.size() < sizeof(ECDR_static)) {
     throw std::runtime_error("File truncated");
-  }
-}
-
-Zip::Zip(const std::string &filename) {
-  auto rawBytes{utils::readFile(filename, std::ifstream::binary)};
-  checkIfValidArchive(rawBytes);
-
-  this->ecdr = Zip::readEcdr(rawBytes);
-  auto cdfhs{Zip::readCdfhs(rawBytes)};
-  auto lfhs{Zip::readLfhs(rawBytes, cdfhs)};
-
-  if (lfhs.size() != cdfhs.size()) {
-    // We assume that number of lfs must be the same as the number of cdfh,
-    // if it is not we assume it is broken
-    throw std::runtime_error("Corrupted archive");
-  }
-
-  this->entries.reserve(cdfhs.size());
-  for (unsigned int i = 0; i < cdfhs.size(); i++) {
-    this->entries.emplace_back(cdfhs[i], lfhs[i]);
   }
 }
 

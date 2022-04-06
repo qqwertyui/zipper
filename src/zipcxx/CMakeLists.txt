@@ -1,8 +1,8 @@
 set(
   ZIPCXX_SOURCES 
-  "Zip.cpp"
-  "ZipEntry.cpp"
-  "ZipStructs.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Zip.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ZipEntry.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ZipStructs.cpp"
 )
 
 set(ZIPCXX_ROOT ${CMAKE_CURRENT_SOURCE_DIR})

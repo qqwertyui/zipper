@@ -1,0 +1,15 @@
+set(TemplateTestSources
+  #"${ZIPCXX_ROOT}/Zip.cpp"
+)
+set(TemplateTestLibraries
+  #"utils"
+)
+set(TemplateTestSamples
+  #"${CMAKE_CURRENT_SOURCE_DIR}/test1.zip"
+  #"${COMMON_SAMPLES}/sample1.zip"
+)
+add_ut(TemplateTest 
+  "${TemplateTestSources}" 
+  "${TemplateTestLibraries}" 
+  "${TemplateTestSamples}"
+)

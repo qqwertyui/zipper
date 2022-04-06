@@ -12,4 +12,8 @@ function(add_ut target_name sources libraries input_samples)
   endforeach(current_sample)
 endfunction()
 
+set(COMMON_SAMPLES "${CMAKE_CURRENT_SOURCE_DIR}/common_samples")
+
+#add_subdirectory(TemplateTest)
 add_subdirectory(TestUnpackArchive)
+add_subdirectory(TestBasicMethods)

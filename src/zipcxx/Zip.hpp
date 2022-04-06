@@ -23,7 +23,7 @@ public:
 
 private:
   void checkIfValidArchive(const std::vector<std::byte> &rawBytes);
-  bool isValidLFHSignature(const std::vector<std::byte> &inputSignature);
+  static bool isValidLFHSignature(const std::vector<std::byte> &inputSignature);
   static bool isDirectory(const CDFH &entry);
 
   std::unique_ptr<ECDR> readEcdr(const std::vector<std::byte> &data);

@@ -1,0 +1,14 @@
+set(TestBasicMethodsSources
+  "${ZIPCXX_SOURCES}"
+)
+set(TestBasicMethodsLibraries
+  "utils"
+)
+set(TestBasicMethodsSamples
+  "${COMMON_SAMPLES}/sample1.zip"
+)
+add_ut(TestBasicMethods 
+  "${TestBasicMethodsSources}" 
+  "${TestBasicMethodsLibraries}" 
+  "${TestBasicMethodsSamples}"
+)

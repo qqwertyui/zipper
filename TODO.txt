@@ -3,3 +3,6 @@
 3. Add encryption handling
 4. Add support for archive creation
 5. Add GUI interface
+6. Change the way UTs are done
+7. Prepare vscode extensions for cmake and bash files formatting
+8. Setup CI/CD
