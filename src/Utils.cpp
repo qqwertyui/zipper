@@ -7,14 +7,20 @@
 #include <fstream>
 #include <stdexcept>
 
+namespace zipper::utils {
 DosTime::DosTime(uint16_t time, uint16_t date) {
-  this->second = (time & 0x1f) * 2;
-  this->minute = (time & 0x7ff) >> 5;
-  this->hour = time >> 11;
+  timeinfo.tm_sec = (time & 0x1f) * 2;
+  timeinfo.tm_min = (time & 0x7ff) >> 5;
+  timeinfo.tm_hour = time >> 11;
+  timeinfo.tm_mday = date & 0x1f;
+  timeinfo.tm_mon = ((date & 0x1ff) >> 5) - 1;
+  timeinfo.tm_year = (1980 + (date >> 9)) - 1900;
+}
 
-  this->day = date & 0x1f;
-  this->month = (date & 0x1ff) >> 5;
-  this->year = 1980 + (date >> 9);
+time_t DosTime::getUnixTimestamp() { return mktime(&timeinfo); }
+
+struct tm DosTime::getTmStruct() {
+  return timeinfo;
 }
 
 Data::Data(std::byte *data, unsigned int data_size) {
@@ -22,7 +28,10 @@ Data::Data(std::byte *data, unsigned int data_size) {
   this->data_size = data_size;
 }
 
-Data::Data() {}
+Data::Data(std::vector<std::byte> &data) {
+  this->data = data.data();
+  this->data_size = data.size();
+}
 
 Chunk_manager::Chunk_manager() {
   this->elements = 0;
@@ -60,7 +69,6 @@ std::byte *Chunk_manager::to_bytearray() {
   return bytes;
 }
 
-namespace Utils {
 char *find_last_of(const char *text, const char *delimiter) {
   char *stripped_name = nullptr;
   char *tmp = strtok((char *)text, delimiter);
@@ -81,7 +89,7 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   infstream.zfree = Z_NULL;
   infstream.opaque = Z_NULL;
   infstream.avail_in = (uInt)input->data_size;
-  infstream.next_in = (Bytef*)input->data;
+  infstream.next_in = (Bytef *)input->data;
 
   int status = inflateInit2(&infstream, -MAX_WBITS);
   if (status != Z_OK) {
@@ -91,7 +99,7 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   std::byte temp[CHUNKSZ] = {};
   do {
     infstream.avail_out = CHUNKSZ;
-    infstream.next_out = (Bytef*)temp;
+    infstream.next_out = (Bytef *)temp;
 
     status = inflate(&infstream, Z_NO_FLUSH);
     if (status != Z_OK && status != Z_STREAM_END) {
@@ -108,29 +116,31 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   return result;
 }
 
-std::vector<std::byte> read_file(std::string &filename, std::ifstream::openmode flags) {
-    std::ifstream file(filename, flags);
-	if(file.good() == false) {
-		throw std::runtime_error("File reading error");
-	}
-	
-	file.seekg(0, std::ios_base::end);
-	unsigned int filesz = file.tellg();
-	file.seekg(0, std::ios_base::beg);
+std::vector<std::byte> readFile(const std::string &filename,
+                                std::ifstream::openmode flags) {
+  std::ifstream file(filename, flags);
+  if (file.good() == false) {
+    throw std::runtime_error("File reading error");
+  }
 
-    std::vector<std::byte> result(filesz);
-    file.read((char*)result.data(), result.capacity());
-    file.close();
-    return result;
+  file.seekg(0, std::ios_base::end);
+  unsigned int filesz = file.tellg();
+  file.seekg(0, std::ios_base::beg);
+
+  std::vector<std::byte> result(filesz);
+  file.read((char *)result.data(), result.capacity());
+  file.close();
+  return result;
 }
 
-void write_file(std::string &filename, std::vector<std::byte> &data, std::ofstream::openmode flags) {
-    std::ofstream file(filename, flags);
-    if(file.good() == false) {
-        throw std::runtime_error("File writing error");
-    }
-    file.write((char*)data.data(), data.size());
-    file.close();
+void writeFile(const std::string &filename, const std::vector<std::byte> &data,
+               std::ofstream::openmode flags) {
+  std::ofstream file(filename, flags);
+  if (file.good() == false) {
+    throw std::runtime_error("File writing error");
+  }
+  file.write((char *)data.data(), data.size());
+  file.close();
 }
 
-} // namespace Utils
+} // namespace zipper::utils

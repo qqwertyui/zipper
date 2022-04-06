@@ -2,22 +2,22 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <fstream>
 #include <memory>
 #include <string>
 #include <vector>
 
+namespace zipper::utils {
 class DosTime {
 public:
   DosTime(uint16_t time, uint16_t date);
 
-  uint8_t second;
-  uint8_t minute;
-  uint8_t hour;
+  time_t getUnixTimestamp();
+  struct tm getTmStruct();
 
-  uint8_t day;
-  uint8_t month;
-  uint16_t year;
+private:
+  struct tm timeinfo;
 };
 
 class Data {
@@ -26,7 +26,8 @@ public:
   unsigned int data_size;
 
   Data(std::byte *data, unsigned int data_size);
-  Data();
+  Data(std::vector<std::byte> &data);
+  Data() = default;
 };
 
 typedef std::vector<Data *> Data_vector;
@@ -44,7 +45,6 @@ public:
   std::byte *to_bytearray();
 };
 
-namespace Utils {
 /* Returns address of the last occurence of given character in string, alters
  * input string */
 char *find_last_of(const char *text, const char *delimiter);
@@ -52,9 +52,9 @@ char *find_last_of(const char *text, const char *delimiter);
 std::vector<std::byte> zlib_inflate(Data *input);
 
 std::vector<std::byte>
-read_file(std::string &filename,
-          std::ifstream::openmode flags = std::ifstream::in);
+readFile(const std::string &filename,
+         std::ifstream::openmode flags = std::ifstream::in);
 
-void write_file(std::string &filename, std::vector<std::byte> &data,
-                std::ofstream::openmode flags = std::ofstream::out);
-} // namespace Utils
+void writeFile(const std::string &filename, const std::vector<std::byte> &data,
+               std::ofstream::openmode flags = std::ofstream::out);
+} // namespace zipper::utils

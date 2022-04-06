@@ -10,7 +10,7 @@ if(WIN32)
     target_link_libraries(zipcore PUBLIC shlwapi)
 endif(WIN32)
 
-add_executable(zipper ${CMAKE_SOURCE_DIR}/src/App.cpp)
+add_executable(zipper ${CMAKE_SOURCE_DIR}/src/Main.cpp)
 target_link_libraries(zipper PUBLIC zipcore)
 target_link_libraries(zipper PUBLIC gflags_nothreads)
 target_link_options(zipper PUBLIC -static)

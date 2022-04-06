@@ -1,120 +1,147 @@
 #include "Zip_structs.hpp"
 
-#include <cstring>
-#include <zlib.h>
 #include <cstdio>
+#include <cstring>
+#include <stdexcept>
+#include <zlib.h>
 
-ECDR::ECDR(std::vector<std::byte> &data) {
-  memcpy(this, data.data(), ECDR::FIXED_FIELDS_LENGTH);
+namespace zipper {
 
-  if (this->comment_length > 0) {
-    this->comment = new char[this->comment_length];
-    memcpy(this->comment, data.data() + ECDR::FIXED_FIELDS_LENGTH, this->comment_length);
+Hexdumpable::Hexdumpable(const std::vector<std::byte> &raw_bytes)
+    : raw_bytes(raw_bytes) {}
+
+Hexdumpable::Hexdumpable(const Hexdumpable &old) : raw_bytes(old.raw_bytes) {}
+
+Hexdumpable::Hexdumpable(Hexdumpable &&old)
+    : raw_bytes(std::move(old.raw_bytes)) {}
+
+void Hexdumpable::hexdump() {
+  int i = 0;
+  for (const auto &byte : raw_bytes) {
+    if (i % 0x10 == 0) {
+      puts("");
+    }
+    printf("%.2x ", static_cast<uint8_t>(byte));
+    i++;
   }
 }
 
-ECDR::~ECDR() {
-  delete[] this->comment;
+ECDR::ECDR() : Hexdumpable() {}
+
+ECDR::ECDR(std::vector<std::byte> &data) : Hexdumpable(data) {
+  memcpy(&this->s, data.data(), sizeof(ECDR_static));
+
+  if (this->s.comment_length > 0) {
+    char *commentBegin{reinterpret_cast<char *>(data.data()) +
+                       sizeof(ECDR_static)};
+    this->comment = std::string(commentBegin, this->s.comment_length);
+  }
 }
 
-LFH::LFH(std::vector<std::byte> &data) {
-  memcpy(this, data.data(), LFH::FIXED_FIELDS_LENGTH);
+LFH::LFH() : Hexdumpable() {}
 
-  unsigned int length, offset = 0;
-  length = this->name_length;
+LFH::LFH(std::vector<std::byte> &data) : Hexdumpable(data) {
+  if (data.size() < sizeof(LFH_static)) {
+    throw std::runtime_error("Corrupted archive (invalid LFH entry length)");
+  }
+  memcpy(&this->s, data.data(), sizeof(LFH_static));
+
+  char *ptr = reinterpret_cast<char *>(data.data() + sizeof(LFH_static));
+  unsigned int length;
+  length = this->s.name_length;
+  if (length == 0) {
+    throw std::runtime_error(
+        "Corrupted archive (LFH entry contains no filename)");
+  }
+  this->name = std::string(ptr, length);
+  ptr += length;
+
+  length = this->s.extra_length;
   if (length > 0) {
-    this->name = new char[length];
-    memcpy(this->name, data.data() + LFH::FIXED_FIELDS_LENGTH, length);
-    offset += length;
+    this->extra = std::string(ptr, length);
+    ptr += length;
   }
-  length = this->extra_length;
-  if (length > 0) {
-    this->extra = new char[length];
-    memcpy(this->extra, data.data() + LFH::FIXED_FIELDS_LENGTH + offset, length);
-    offset += length;
-  }
-  this->data = new std::byte[this->c_size];
-  memcpy(this->data, data.data() + LFH::FIXED_FIELDS_LENGTH + offset, this->c_size);
+  this->data = std::vector<std::byte>(this->s.c_size);
+  memcpy(this->data.data(), ptr, this->s.c_size);
 }
 
-LFH::LFH(const LFH &old) {
-  memcpy(this, &old, LFH::FIXED_FIELDS_LENGTH);
-
-  if(old.name != nullptr) {
-    this->name = new char[old.name_length];
-    memcpy(this->name, old.name, old.name_length);
-  } if(old.extra != nullptr) {
-    this->extra = new char[old.extra_length];
-    memcpy(this->extra, old.extra, old.extra_length);
-  }
-  this->data = new std::byte[old.c_size];
-  memcpy(this->data, old.data, old.c_size);
+LFH::LFH(const LFH &old) : Hexdumpable(old.raw_bytes) {
+  this->s = old.s;
+  this->name = old.name;
+  this->extra = old.extra;
+  this->data = old.data;
 }
 
-LFH& LFH::operator=(const LFH &old) {
+LFH::LFH(LFH &&old)
+    : Hexdumpable(std::move(old.raw_bytes)), name(std::move(old.name)),
+      extra(std::move(old.extra)), data(std::move(old.data)) {
+  this->s = old.s;
+}
 
-  memcpy(this, &old, LFH::FIXED_FIELDS_LENGTH);
-
-  if(old.name != nullptr) {
-    this->name = new char[old.name_length];
-    memcpy(this->name, old.name, old.name_length);
-  } if(old.extra != nullptr) {
-    this->extra = new char[old.extra_length];
-    memcpy(this->extra, old.extra, old.extra_length);
+LFH &LFH::operator=(const LFH &old) {
+  if (&old == this) {
+    return *this;
   }
-  this->data = new std::byte[old.c_size];
-  memcpy(this->data, old.data, old.c_size);
+  this->s = old.s;
+  this->raw_bytes = old.raw_bytes;
+  this->name = old.name;
+  this->extra = old.extra;
+  this->data = old.data;
   return *this;
 }
 
-LFH::~LFH() {
-  delete[] this->name;
-  delete[] this->extra;
-  delete[] this->data;
+CDFH::CDFH() : Hexdumpable() {}
+
+CDFH::CDFH(std::vector<std::byte> &data) : Hexdumpable(data) {
+  if (data.size() < sizeof(CDFH_static)) {
+    throw std::runtime_error("Corrupted archive (invalid CDFH entry length)");
+  }
+  memcpy(&this->s, data.data(), sizeof(CDFH_static));
+
+  char *ptr = reinterpret_cast<char *>(data.data() + sizeof(CDFH_static));
+  unsigned int length;
+  length = this->s.name_length;
+  if (length == 0) {
+    throw std::runtime_error(
+        "Corrupted archive (CDFH entry contains no filename)");
+  }
+  this->name = std::string(ptr, length);
+  ptr += length;
+
+  length = this->s.extra_length;
+  if (length > 0) {
+    this->extra = std::string(ptr, length);
+    ptr += length;
+  }
+  length = this->s.comment_length;
+  if (length > 0) {
+    this->comment = std::string(ptr, length);
+  }
 }
 
-CDFH::CDFH(std::vector<std::byte> &data) {
-  memcpy(this, data.data(), CDFH::FIXED_FIELDS_LENGTH);
-
-  unsigned int length, offset = 0;
-  length = this->name_length;
-  if (length > 0) {
-    this->name = new char[length];
-    memcpy(this->name, data.data() + CDFH::FIXED_FIELDS_LENGTH, length);
-    offset += length;
-  }
-  length = this->extra_length;
-  if (length > 0) {
-    this->extra = new char[length];
-    memcpy(this->extra, data.data() + CDFH::FIXED_FIELDS_LENGTH + offset, length);
-    offset += length;
-  }
-  length = this->comment_length;
-  if (length > 0) {
-    this->comment = new char[length];
-    memcpy(this->comment, data.data() + CDFH::FIXED_FIELDS_LENGTH + offset, length);
-  }
+CDFH::CDFH(const CDFH &old) : Hexdumpable(old.raw_bytes) {
+  this->s = old.s;
+  this->name = old.name;
+  this->extra = old.extra;
+  this->comment = old.comment;
 }
 
-CDFH& CDFH::operator=(const CDFH &old) {
-  memcpy(this, &old, CDFH::FIXED_FIELDS_LENGTH);
+CDFH::CDFH(CDFH &&old)
+    : Hexdumpable(std::move(old.raw_bytes)), name(std::move(old.name)),
+      extra(std::move(old.extra)), comment(std::move(old.comment)) {
+  this->s = old.s;
+}
 
-  if(old.name != nullptr) {
-    this->name = new char[old.name_length];
-    memcpy(this->name, old.name, old.name_length);
-  } if(old.extra != nullptr) {
-    this->extra = new char[old.extra_length];
-    memcpy(this->extra, old.extra, old.extra_length);
-  } if(old.comment != nullptr) {
-    this->comment = new char[old.comment_length];
-    memcpy(this->comment, old.comment, old.comment_length);
+CDFH &CDFH::operator=(const CDFH &old) {
+  if (&old == this) {
+    return *this;
   }
+  this->s = old.s;
+  this->raw_bytes = old.raw_bytes;
+  this->name = old.name;
+  this->extra = old.extra;
+  this->comment = old.comment;
   return *this;
 }
 
-
-CDFH::~CDFH() {
-  delete[] this->name;
-  delete[] this->extra;
-  delete[] this->comment;
-}
+} // namespace zipper

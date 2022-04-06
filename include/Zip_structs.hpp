@@ -1,9 +1,13 @@
 #pragma once
 
+#include <array>
 #include <climits>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <string>
 #include <vector>
+
 
 /*
 Taken directly from APPNOTE.TXT, but is not used at all
@@ -28,18 +32,28 @@ enum class gpbf {
 };
 */
 
-/*
-  Local File Header
-*/
-class LFH {
+namespace zipper {
+
+class Hexdumpable {
 public:
-  LFH() = default;
-  LFH(std::vector<std::byte> &data);
-  LFH(const LFH &old);
-  ~LFH();
+  Hexdumpable() = default;
+  Hexdumpable(const std::vector<std::byte> &raw_bytes);
+  Hexdumpable(const Hexdumpable &old);
+  Hexdumpable(Hexdumpable &&old);
 
-  LFH &operator=(const LFH &old);
+  virtual void hexdump();
 
+protected:
+  std::vector<std::byte> raw_bytes;
+};
+
+class Signaturable {
+public:
+  using Type = std::array<uint8_t, 4>;
+  virtual Type getSignature() = 0;
+};
+
+struct LFH_static {
   std::byte sig[4];
   uint16_t ex_version;
   uint16_t gpbf;
@@ -49,28 +63,35 @@ public:
   uint32_t crc32;
   uint32_t c_size;
   uint32_t uc_size;
-
   uint16_t name_length;
   uint16_t extra_length;
-
-  char *name = nullptr;
-  char *extra = nullptr;
-  std::byte *data = nullptr;
-
-  static constexpr int FIXED_FIELDS_LENGTH = 30;
 } __attribute__((packed));
+
+/*
+  Local File Header
+*/
+class LFH : public Signaturable, Hexdumpable {
+public:
+  LFH();
+  LFH(std::vector<std::byte> &data);
+  LFH(const LFH &old);
+  LFH(LFH &&old);
+  LFH &operator=(const LFH &old);
+
+  LFH_static s;
+  std::string name;
+  std::optional<std::string> extra;
+  std::vector<std::byte> data;
+
+  Signaturable::Type getSignature() override {
+    return Signaturable::Type{0x50, 0x4b, 0x03, 0x04};
+  }
+};
 
 /*
   Central Directory File Header
 */
-class CDFH {
-public:
-  CDFH() = default;
-  CDFH(std::vector<std::byte> &data);
-  ~CDFH();
-
-  CDFH &operator=(const CDFH &old);
-
+struct CDFH_static {
   std::byte sig[4];
   uint16_t version_made;
   uint16_t version_needed;
@@ -78,34 +99,40 @@ public:
   uint16_t c_method;
   uint16_t mod_time;
   uint16_t mod_date;
-
   uint32_t crc32;
   uint32_t c_size;
   uint32_t uc_size;
   uint16_t name_length;
   uint16_t extra_length;
   uint16_t comment_length;
-
   uint16_t disk_num;
   uint16_t int_attributes;
   uint32_t ext_attributes;
   uint32_t lh_offset;
-
-  char *name = nullptr;
-  char *extra = nullptr;
-  char *comment = nullptr;
-
-  static constexpr int FIXED_FIELDS_LENGTH = 46;
 } __attribute__((packed));
+
+class CDFH : public Signaturable, Hexdumpable {
+public:
+  CDFH();
+  CDFH(std::vector<std::byte> &data);
+  CDFH(const CDFH &old);
+  CDFH(CDFH &&old);
+  CDFH &operator=(const CDFH &old);
+
+  CDFH_static s;
+  std::string name;
+  std::optional<std::string> extra;
+  std::optional<std::string> comment;
+
+  Signaturable::Type getSignature() override {
+    return Signaturable::Type{0x50, 0x4b, 0x01, 0x02};
+  }
+};
 
 /*
   End of Central Directory Record
 */
-class ECDR {
-public:
-  ECDR(std::vector<std::byte> &data);
-  ~ECDR();
-
+struct ECDR_static {
   std::byte sig[4];
   uint16_t disk_num;
   uint16_t disk_num_cdfh;
@@ -114,14 +141,19 @@ public:
   uint32_t size_cdh;
   uint32_t cd_offset;
   uint16_t comment_length;
-
-  char *comment = nullptr;
-
-  static constexpr int FIXED_FIELDS_LENGTH = 22;
 } __attribute__((packed));
 
-namespace Signature {
-constexpr unsigned int LFH = 0x04034b50;
-constexpr unsigned int CDFH = 0x02014b50;
-constexpr unsigned int ECDR = 0x06054b50;
-}; // namespace Signature
+class ECDR : public Signaturable, Hexdumpable {
+public:
+  ECDR();
+  ECDR(std::vector<std::byte> &data);
+
+  ECDR_static s;
+  std::optional<std::string> comment;
+
+  Signaturable::Type getSignature() override {
+    return Signaturable::Type{0x50, 0x4b, 0x05, 0x06};
+  }
+};
+
+} // namespace zipper

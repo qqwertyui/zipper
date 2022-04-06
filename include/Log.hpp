@@ -2,9 +2,9 @@
 #include <cstdarg>
 #include <string>
 
-namespace Log {
+namespace zipper::utils::logging {
 void info(const char *msg);
 void infof(const char *msg, ...);
 void error(const char *msg);
 void errorf(const char *msg, ...);
-} // namespace Log
+} // namespace zipper::utils::logging

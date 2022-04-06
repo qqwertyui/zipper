@@ -1,65 +1,44 @@
-#ifndef ZIP_HPP
-#define ZIP_HPP
+#pragma once
 
+#include <array>
 #include <cstddef>
-#include <vector>
 #include <memory>
-#include <tuple>
 #include <stdexcept>
+#include <vector>
 
 #include "Utils.hpp"
+#include "ZipEntry.hpp"
 #include "Zip_structs.hpp"
 
-class ZipEntry;
-
+namespace zipper {
 class Zip {
 public:
   // enums
-  enum Job { 
-      LIST = 1, 
-      EXTRACT = 2 
-  };
+  enum Job { LIST = 1, EXTRACT = 2 };
 
-  Zip(std::string filename);
-  ~Zip();
+  Zip(const std::string &filename);
 
-  void list_files() const;
-  void extract(std::string &filename);
-  void extract_all();
+  std::vector<std::string> getFilenames() const;
+  void extract(const std::string &filename);
+  void extractAll();
 
-  std::vector<ZipEntry*> get_entries() const;
+  std::vector<ZipEntry> &getEntries();
+  ZipEntry &getEntryByFilename(const std::string &filename);
 
 private:
-  static bool is_directory(CDFH *entry);
-  
-  std::unique_ptr<ECDR> read_ecdr(std::vector<std::byte> &data);
-  std::vector<CDFH*> read_cdfhs(std::vector<std::byte> &data);
-  std::vector<LFH*> read_lfhs(std::vector<std::byte> &data, std::vector<CDFH*> &cdfhs);
+  void checkIfValidArchive(const std::vector<std::byte> &rawBytes);
+  bool isValidLFHSignature(const std::vector<std::byte> &inputSignature);
+  static bool isDirectory(const CDFH &entry);
 
-  // Structured zip data
+  std::unique_ptr<ECDR> readEcdr(const std::vector<std::byte> &data);
+  std::vector<CDFH> readCdfhs(const std::vector<std::byte> &data);
+  std::vector<LFH> readLfhs(const std::vector<std::byte> &data,
+                            const std::vector<CDFH> &cdfhs);
+
+  std::vector<std::byte> decompress(LFH &lfh);
+
   std::unique_ptr<ECDR> ecdr;
-  std::vector<ZipEntry*> entries;
-
-  std::vector<std::byte> decompress(LFH *lfh);
-  ZipEntry* get_entry_by_filename(std::string &filename);
-};
-
-class ZipEntry {
-public:
-    ZipEntry(const CDFH &cdfh, const LFH &lfh);
-    ~ZipEntry();
-
-    const std::string& get_name() const;
-    const DosTime& get_time() const;
-    CDFH& get_cdfh();
-    LFH& get_lfh();
-
-private:
-    std::string filename;
-    DosTime *time;
-
-    CDFH cdfh;
-    LFH lfh;
+  std::vector<ZipEntry> entries;
 };
 
 enum class Compression {
@@ -92,5 +71,4 @@ enum class Compression {
   PPMD_V1 = 98,
   AEX = 99
 };
-
-#endif
+} // namespace zipper
