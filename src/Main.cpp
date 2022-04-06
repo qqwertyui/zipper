@@ -1,50 +1,45 @@
 #include <gflags/gflags.h>
 
-#include "Error.hpp"
-#include "Gflags_defines.hpp"
-#include "Log.hpp"
+#include "GflagsDefines.hpp"
 #include "Version.hpp"
-#include "Zip.hpp"
+#include "zipcxx/Zip.hpp"
 #include <iostream>
 
-using namespace zipper;
+enum Status { ok, not_enough_args, invalid_zip, processing_error };
 
 int main(int argc, char **argv) {
-  gflags::SetUsageMessage("zipper.exe -f <input> -m [list]/extract\n");
+  gflags::SetUsageMessage("zipper.exe -f <input> -m [list,extract]\n");
   gflags::SetVersionString(Version::STRING);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
   if (FLAGS_f.empty() == true) {
-    fputs(gflags::ProgramUsage(), stderr);
-    return Error::NOT_ENOUGH_ARGS;
+    std::cerr << gflags::ProgramUsage() << "\n";
+    return Status::not_enough_args;
   }
 
-  Zip::Job operation{Zip::Job::LIST};
-  if (FLAGS_m.compare("extract") == 0) {
-    operation = Zip::Job::EXTRACT;
-  }
-
-  Zip *archive{nullptr};
+  zipcxx::Zip *archive{nullptr};
   try {
-    archive = new Zip(FLAGS_f);
+    archive = new zipcxx::Zip(FLAGS_f);
   } catch (const std::runtime_error &e) {
-    utils::logging::errorf("ZIP error: %s\n", e.what());
-    return Error::INVALID_ZIP;
+    std::cerr << "ZIP error: " << e.what() << "\n";
+    return Status::invalid_zip;
   }
 
   try {
-    if (operation == Zip::Job::LIST) {
+    if (FLAGS_m.compare("list") == 0) {
       for (auto &entry : archive->getEntries()) {
         std::cout << entry.getTimeAsString() << " | " << entry.getFilename()
                   << "\n";
       }
-    } else if (operation == Zip::Job::EXTRACT) {
+    } else if (FLAGS_m.compare("extract") == 0) {
       archive->extractAll();
-      utils::logging::info("Sucesfully extraced file(s)\n");
+      std::cout << "Sucesfully extraced file(s)\n";
+    } else {
+      std::cout << "Unknown operation, possible are: [list,extract]\n";
     }
   } catch (const std::exception &e) {
-    utils::logging::errorf("Failed to process the file: %s\n", e.what());
-    return Error::PROCESSING_ERROR;
+    std::cerr << "Failed to process the file: " << e.what() << "\n";
+    return Status::processing_error;
   }
 
-  return Error::OK;
+  return Status::ok;
 }

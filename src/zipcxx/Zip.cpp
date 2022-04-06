@@ -2,13 +2,13 @@
 
 #include <algorithm>
 #include <climits>
+#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 
-#include <cstdio>
+namespace zipcxx {
 
-namespace zipper {
 bool Zip::isValidLFHSignature(const std::vector<std::byte> &inputSignature) {
   const auto lfhSignature{LFH{}.getSignature()};
   return std::equal(lfhSignature.begin(), lfhSignature.end(),
@@ -197,4 +197,4 @@ void Zip::extractAll() {
 }
 
 std::vector<ZipEntry> &Zip::getEntries() { return this->entries; }
-} // namespace zipper
+} // namespace zipcxx

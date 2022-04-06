@@ -1,7 +1,8 @@
 #include "Log.hpp"
 #include <cstdio>
 
-namespace zipper::utils::logging {
+namespace zipcxx::utils::logging {
+
 void info(const char *msg) { fprintf(stdout, "[+] %s", msg); }
 void infof(const char *msg, ...) {
   va_list valist;
@@ -23,4 +24,5 @@ void errorf(const char *msg, ...) {
 
   va_end(valist);
 }
-} // namespace zipper::utils::logging
+
+} // namespace zipcxx::utils::logging

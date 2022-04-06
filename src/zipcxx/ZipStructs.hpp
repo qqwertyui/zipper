@@ -8,32 +8,7 @@
 #include <string>
 #include <vector>
 
-
-/*
-Taken directly from APPNOTE.TXT, but is not used at all
-
-enum class gpbf {
-        encrypted = 		(1 << 0),
-        encoding1 = 		(1 << 1),
-        encoding2 = 		(1 << 2),
-        values = 			(1 << 3),
-        enh_deflate =  		(1 << 4),
-        comp_patched = 		(1 << 5),
-        strong_encrypt =	(1 << 6),
-        unused1 = 			(1 << 7),
-        unused2 = 			(1 << 8),
-        unused3 = 			(1 << 9),
-        unused4 = 			(1 << 10),
-        lang_encoding = 	(1 << 11),
-        reserved1 = 		(1 << 12),
-        hidden = 			(1 << 13),
-        reserved2 = 		(1 << 14),
-        reserved3 = 		(1 << 15)
-};
-*/
-
-namespace zipper {
-
+namespace zipcxx {
 class Hexdumpable {
 public:
   Hexdumpable() = default;
@@ -155,5 +130,4 @@ public:
     return Signaturable::Type{0x50, 0x4b, 0x05, 0x06};
   }
 };
-
-} // namespace zipper
+} // namespace zipcxx

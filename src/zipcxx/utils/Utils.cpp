@@ -1,13 +1,12 @@
 #include "Utils.hpp"
 
-#include <zlib.h>
-
-#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <stdexcept>
+#include <zlib.h>
 
-namespace zipper::utils {
+namespace zipcxx::utils {
+
 DosTime::DosTime(uint16_t time, uint16_t date) {
   timeinfo.tm_sec = (time & 0x1f) * 2;
   timeinfo.tm_min = (time & 0x7ff) >> 5;
@@ -143,4 +142,4 @@ void writeFile(const std::string &filename, const std::vector<std::byte> &data,
   file.close();
 }
 
-} // namespace zipper::utils
+} // namespace zipcxx::utils

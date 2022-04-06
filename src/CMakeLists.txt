@@ -1,16 +1,16 @@
-file(GLOB SRC_FILES "*.cpp")
-list(FILTER SRC_FILES EXCLUDE REGEX "App.cpp")
+set(
+  APP_SOURCES
+  "Main.cpp"
+)
 
-add_library(zipcore STATIC ${SRC_FILES})
-target_include_directories(zipcore PUBLIC ${CMAKE_SOURCE_DIR}/include/)
-configure_file(${CMAKE_SOURCE_DIR}/include/Version.hpp.in ${CMAKE_SOURCE_DIR}/include/Version.hpp)
-target_link_libraries(zipcore PUBLIC z)
+add_subdirectory(zipcxx)
+add_executable(zipper ${APP_SOURCES})
+configure_file(Version.hpp.in Version.hpp)
 
-if(WIN32)
-    target_link_libraries(zipcore PUBLIC shlwapi)
-endif(WIN32)
-
-add_executable(zipper ${CMAKE_SOURCE_DIR}/src/Main.cpp)
-target_link_libraries(zipper PUBLIC zipcore)
+target_link_libraries(zipper PUBLIC zipcxx)
 target_link_libraries(zipper PUBLIC gflags_nothreads)
 target_link_options(zipper PUBLIC -static)
+
+if(WIN32)
+    target_link_libraries(zipper PUBLIC shlwapi)
+endif(WIN32)

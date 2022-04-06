@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace zipper::utils {
+namespace zipcxx::utils {
 class DosTime {
 public:
   DosTime(uint16_t time, uint16_t date);
@@ -57,4 +57,4 @@ readFile(const std::string &filename,
 
 void writeFile(const std::string &filename, const std::vector<std::byte> &data,
                std::ofstream::openmode flags = std::ofstream::out);
-} // namespace zipper::utils
+} // namespace zipcxx::utils

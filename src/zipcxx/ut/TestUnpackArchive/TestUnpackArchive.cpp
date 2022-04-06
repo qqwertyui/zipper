@@ -1,10 +1,10 @@
-#include "Zip.hpp"
+#include <Zip.hpp>
 #include <cstdio>
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
 
-using namespace zipper;
+using namespace zipcxx;
 
 bool test_archive(const std::string &name,
                   const std::vector<std::string> &expected) {

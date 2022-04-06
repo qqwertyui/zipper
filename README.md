@@ -1,35 +1,33 @@
-# zipper
-Zip archive unpacker created for learning purposes.
+## Application and library for zip manipulations
 
-It supports following data formats:
+### 1. Description
+Simple zip archive unpacker and lister created for learning purposes. If you are not interested in application
+but in library itself it can be found under src/zipcxx
+It supports zip files that encryptions scheme is:
 - stored
-- deflate
+- deflated
 
-It also doesn't understand what encryption is so any zip encrypted with password cannot be opened.
-This project uses slightly modified version of gflags which can be found in this repo.
+It doesn't understand what encryption is so any zip encrypted with password cannot be opened.
 
-1. Requirements:
-- g++ with c++17 support
+### 2. Requirements:
+#### 2.1 Libraries
 - gflags
 - gtest
-- zlib compression library
+- zlib
+#### 2.2 Tools
+- g++ with c++17 support
+- cygwin (bash, find)
+- cmake
+- gnu make
 
-2. Build:
+### 3. Build:
+- git clone https://github.com/qqwertyui/zipper && cd zipper
+- bash ; source setup.sh
+- build_app
+- run_tests (optional)
 
-git clone https://github.com/qqwertyui/zipper && cd zipper
-
-mkdir build && cd build
-
-cmake .. -G "Unix Makefiles"
-
-make
-
-3. Examples:
-
-- Get archive contents:
-
-./zipper -f SDL2-2.0.16-win32-x64.zip
-
-- Unpack archive:
-
-./zipper -f SDL2-2.0.16-win32-x64.zip -m extract
+### 4. Examples:
+#### Get archive contents:
+- ./zipper -f SDL2-2.0.16-win32-x64.zip -m list
+#### Unpack archive:
+- ./zipper -f SDL2-2.0.16-win32-x64.zip -m extract

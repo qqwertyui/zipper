@@ -2,19 +2,28 @@
 
 PROJECT_ROOT=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-eval_at() {
-  if [ $# -ne 2 ]; then
-    return
-  fi
-  pushd $1 &> /dev/null
-  eval $2
-  popd &> /dev/null
-} 
+build_app() {
+  pushd ${PROJECT_ROOT} >/dev/null
+  rm build -rf ; mkdir build ; cd build
+  cmake .. -G"Unix Makefiles"
+  make
+  popd >/dev/null
+}
 
-CMD_BUILD="rm build -rf; mkdir build; cd build; cmake .. -G\"Unix Makefiles\"; make"
-CMD_BUILD_N_TEST="$CMD_BUILD && cd tests/ && ./zipper_tests.exe"
-CMD_RUN_TESTS="cd build/tests && ./zipper_tests.exe"
+run_tests() {
+  pushd ${PROJECT_ROOT}/build/src/zipcxx/ut/ >/dev/null
+  readarray -d '' tests < <(/usr/bin/find . -name "Test*" -print0)
+  for test in "$tests"; do
+    echo "Running $test"
+    pushd $test >/dev/null
+    "$test.exe"
+    popd >/dev/null
+  done
+  popd >/dev/null
+}
 
-alias build_app="eval_at '$PROJECT_ROOT' '$CMD_BUILD'"
-alias build_app_and_test="eval_at '$PROJECT_ROOT' '$CMD_BUILD_N_TEST'"
-alias run_tests="eval_at '$PROJECT_ROOT' '$CMD_RUN_TESTS'"
+registeredFunctions=("build_app" "run_tests")
+echo "Command available:"
+for foo in "${registeredFunctions[@]}"; do
+  echo "    $foo"
+done

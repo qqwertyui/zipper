@@ -1,11 +1,11 @@
 #include "ZipEntry.hpp"
-#include "Utils.hpp"
-#include "Zip_structs.hpp"
+#include "ZipStructs.hpp"
+#include "utils/Utils.hpp"
 #include <iomanip>
 #include <sstream>
 #include <utility>
 
-namespace zipper {
+namespace zipcxx {
 
 ZipEntry::ZipEntry(const ZipEntry &old)
     : cdfh(std::make_unique<CDFH>(*old.cdfh)),
@@ -37,4 +37,4 @@ std::string ZipEntry::getTimeAsString(const std::string &format) const {
 
 utils::DosTime &ZipEntry::getTime() { return *time; }
 
-} // namespace zipper
+} // namespace zipcxx

@@ -1,11 +1,10 @@
-#include "Zip_structs.hpp"
+#include "ZipStructs.hpp"
 
 #include <cstdio>
 #include <cstring>
 #include <stdexcept>
-#include <zlib.h>
 
-namespace zipper {
+namespace zipcxx {
 
 Hexdumpable::Hexdumpable(const std::vector<std::byte> &raw_bytes)
     : raw_bytes(raw_bytes) {}
@@ -144,4 +143,4 @@ CDFH &CDFH::operator=(const CDFH &old) {
   return *this;
 }
 
-} // namespace zipper
+} // namespace zipcxx

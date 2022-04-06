@@ -1,21 +1,17 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
 #include <vector>
 
-#include "Utils.hpp"
 #include "ZipEntry.hpp"
-#include "Zip_structs.hpp"
+#include "ZipStructs.hpp"
+#include "utils/Utils.hpp"
 
-namespace zipper {
+namespace zipcxx {
 class Zip {
 public:
-  // enums
-  enum Job { LIST = 1, EXTRACT = 2 };
-
   Zip(const std::string &filename);
 
   std::vector<std::string> getFilenames() const;
@@ -71,4 +67,4 @@ enum class Compression {
   PPMD_V1 = 98,
   AEX = 99
 };
-} // namespace zipper
+} // namespace zipcxx

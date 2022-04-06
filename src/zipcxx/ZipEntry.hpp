@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-namespace zipper {
+namespace zipcxx {
 class CDFH;
 class LFH;
 
@@ -31,6 +31,6 @@ private:
   std::unique_ptr<CDFH> cdfh;
   std::unique_ptr<LFH> lfh;
 };
-} // namespace zipper
+} // namespace zipcxx
 
 #endif
