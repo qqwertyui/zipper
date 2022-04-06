@@ -1,3 +1,5 @@
 1. Add crc checksum validation
 2. Add UTs for uncovered methods
 3. Add encryption handling
+4. Add support for archive creation
+5. Add GUI interface

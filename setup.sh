@@ -13,6 +13,8 @@ eval_at() {
 
 CMD_BUILD="rm build -rf; mkdir build; cd build; cmake .. -G\"Unix Makefiles\"; make"
 CMD_BUILD_N_TEST="$CMD_BUILD && cd tests/ && ./zipper_tests.exe"
+CMD_RUN_TESTS="cd build/tests && ./zipper_tests.exe"
 
 alias build_app="eval_at '$PROJECT_ROOT' '$CMD_BUILD'"
 alias build_app_and_test="eval_at '$PROJECT_ROOT' '$CMD_BUILD_N_TEST'"
+alias run_tests="eval_at '$PROJECT_ROOT' '$CMD_RUN_TESTS'"
