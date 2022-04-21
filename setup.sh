@@ -37,7 +37,11 @@ run_tests() {
   popd >/dev/null
 }
 
-registeredFunctions=("build_app" "run_tests")
+view() {
+  ${PROJECT_ROOT}/build/src/tools/zipviewer/zipviewer* $@
+}
+
+registeredFunctions=("build_app" "run_tests" "view")
 echo "Command available:"
 for foo in "${registeredFunctions[@]}"; do
   echo "    $foo"

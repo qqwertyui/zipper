@@ -57,7 +57,9 @@ LFH::LFH(std::vector<std::byte> &data) : Hexdumpable(data) {
 
   length = this->s.extra_length;
   if (length > 0) {
-    this->extra = std::string(ptr, length);
+    this->extra =
+        std::vector<std::byte>(reinterpret_cast<std::byte *>(ptr),
+                               reinterpret_cast<std::byte *>(ptr + length));
     ptr += length;
   }
   this->data = std::vector<std::byte>(this->s.c_size);
@@ -109,7 +111,9 @@ CDFH::CDFH(std::vector<std::byte> &data) : Hexdumpable(data) {
 
   length = this->s.extra_length;
   if (length > 0) {
-    this->extra = std::string(ptr, length);
+    this->extra =
+        std::vector<std::byte>(reinterpret_cast<std::byte *>(ptr),
+                               reinterpret_cast<std::byte *>(ptr + length));
     ptr += length;
   }
   length = this->s.comment_length;

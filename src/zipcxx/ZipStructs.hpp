@@ -55,7 +55,7 @@ public:
 
   LFH_static s;
   std::string name;
-  std::optional<std::string> extra;
+  std::optional<std::vector<std::byte>> extra;
   std::vector<std::byte> data;
 
   Signaturable::Type getSignature() override {
@@ -96,7 +96,7 @@ public:
 
   CDFH_static s;
   std::string name;
-  std::optional<std::string> extra;
+  std::optional<std::vector<std::byte>> extra;
   std::optional<std::string> comment;
 
   Signaturable::Type getSignature() override {

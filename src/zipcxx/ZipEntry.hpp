@@ -24,7 +24,10 @@ public:
 
   utils::DosTime &getTime();
   CDFH &getCdfh();
+  const CDFH &getCdfh() const;
+
   LFH &getLfh();
+  const LFH &getLfh() const;
 
 private:
   std::unique_ptr<utils::DosTime> time;

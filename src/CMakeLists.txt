@@ -4,6 +4,7 @@ set(
 )
 
 add_subdirectory(zipcxx)
+add_subdirectory(tools)
 add_executable(zipper ${APP_SOURCES})
 configure_file(Version.hpp.in Version.hpp)
 

@@ -23,8 +23,10 @@ ZipEntry::ZipEntry(ZipEntry &&old)
       time(std::move(old.time)) {}
 
 CDFH &ZipEntry::getCdfh() { return *cdfh; }
+const CDFH &ZipEntry::getCdfh() const { return *cdfh; }
 
 LFH &ZipEntry::getLfh() { return *lfh; }
+const LFH &ZipEntry::getLfh() const { return *lfh; }
 
 std::string ZipEntry::getFilename() const { return cdfh->name; }
 
