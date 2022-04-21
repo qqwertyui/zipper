@@ -1,8 +1,8 @@
 set(TestBasicMethodsSources
-  "${ZIPCXX_SOURCES}"
 )
 set(TestBasicMethodsLibraries
   "utils"
+  "zipcxx"
 )
 set(TestBasicMethodsSamples
   "${COMMON_SAMPLES}/sample1.zip"

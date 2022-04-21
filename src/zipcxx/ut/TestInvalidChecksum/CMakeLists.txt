@@ -1,0 +1,16 @@
+set(TestInvalidChecksumSources
+)
+set(TestInvalidChecksumLibraries
+  "utils"
+  "zipcxx"
+)
+set(TestInvalidChecksumSamples
+  "${CMAKE_CURRENT_SOURCE_DIR}/validChecksum.zip"
+  "${CMAKE_CURRENT_SOURCE_DIR}/invalidChecksum.zip"
+  "${CMAKE_CURRENT_SOURCE_DIR}/invalidChecksumExtract.zip"
+)
+add_ut(TestInvalidChecksum 
+  "${TestInvalidChecksumSources}" 
+  "${TestInvalidChecksumLibraries}" 
+  "${TestInvalidChecksumSamples}"
+)

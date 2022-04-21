@@ -23,8 +23,13 @@ public:
 
 private:
   void checkIfValidArchive(const std::vector<std::byte> &rawBytes);
+  bool areChecksumsValid(const std::vector<std::byte> &rawBytes, const LFH &lfh,
+                         const CDFH &cdfh);
+  bool areLoadedHeadersValid(const std::vector<LFH> &lfhs,
+                             const std::vector<CDFH> &cdfhs);
   static bool isValidLFHSignature(const std::vector<std::byte> &inputSignature);
   static bool isDirectory(const CDFH &entry);
+  static uint32_t crc32(const std::vector<std::byte> &rawBytes);
 
   std::unique_ptr<ECDR> readEcdr(const std::vector<std::byte> &data);
   std::vector<CDFH> readCdfhs(const std::vector<std::byte> &data);

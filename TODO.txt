@@ -1,8 +1,6 @@
-1. Add crc checksum validation
-2. Add UTs for uncovered methods
-3. Add encryption handling
-4. Add support for archive creation
-5. Add GUI interface
-6. Change the way UTs are done
-7. Prepare vscode extensions for cmake and bash files formatting
-8. Setup CI/CD
+1. Add UTs for uncovered methods
+2. Add encryption handling
+3. Add support for archive creation
+4. Add GUI interface
+5. Prepare vscode extensions for cmake and bash files formatting
+6. Setup CI/CD

@@ -1,8 +1,8 @@
 set(TestUnpackArchiveSources
-  "${ZIPCXX_SOURCES}"
 )
 set(TestUnpackArchiveLibraries
   "utils"
+  "zipcxx"
 )
 set(TestUnpackArchiveSamples
   "${CMAKE_CURRENT_SOURCE_DIR}/test1.zip"

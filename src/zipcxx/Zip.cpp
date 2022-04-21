@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <climits>
-#include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -17,9 +16,7 @@ Zip::Zip(const std::string &filename) {
   auto cdfhs{Zip::readCdfhs(rawBytes)};
   auto lfhs{Zip::readLfhs(rawBytes, cdfhs)};
 
-  if (lfhs.size() != cdfhs.size()) {
-    // We assume that number of lfhs must be the same as the number of cdfhs,
-    // if it is not we assume it is broken
+  if (not areLoadedHeadersValid(lfhs, cdfhs)) {
     throw std::runtime_error("Corrupted archive");
   }
 
@@ -38,6 +35,22 @@ bool Zip::isValidLFHSignature(const std::vector<std::byte> &inputSignature) {
                     });
 }
 
+bool Zip::areLoadedHeadersValid(const std::vector<LFH> &lfhs,
+                                const std::vector<CDFH> &cdfhs) {
+  if (lfhs.size() != cdfhs.size()) {
+    return false;
+  }
+  for (unsigned int i = 0; i < cdfhs.size(); i++) {
+    const auto &lfh{lfhs[i]};
+    const auto &cdfh{cdfhs[i]};
+
+    if (lfh.s.crc32 != cdfh.s.crc32) {
+      return false;
+    }
+  }
+  return true;
+}
+
 void Zip::checkIfValidArchive(const std::vector<std::byte> &rawBytes) {
   if (rawBytes.size() < 4 or
       isValidLFHSignature({rawBytes.begin(), rawBytes.begin() + 4}) == false) {
@@ -46,6 +59,30 @@ void Zip::checkIfValidArchive(const std::vector<std::byte> &rawBytes) {
   if (rawBytes.size() < sizeof(ECDR_static)) {
     throw std::runtime_error("File truncated");
   }
+}
+
+uint32_t Zip::crc32(const std::vector<std::byte> &rawBytes) {
+  uint32_t crc = 0xFFFFFFFF;
+  for (unsigned int i = 0; i < rawBytes.size(); i++) {
+    char ch = static_cast<char>(rawBytes[i]);
+    for (unsigned int j = 0; j < 8; j++) {
+      uint32_t b = (ch ^ crc) & 1;
+      crc >>= 1;
+      if (b)
+        crc = crc ^ 0xEDB88320;
+      ch >>= 1;
+    }
+  }
+  return ~crc;
+}
+
+bool Zip::areChecksumsValid(const std::vector<std::byte> &rawBytes,
+                            const LFH &lfh, const CDFH &cdfh) {
+  if (lfh.s.crc32 != cdfh.s.crc32) {
+    return false;
+  }
+  const uint32_t originalChecksum{cdfh.s.crc32};
+  return originalChecksum == crc32(rawBytes);
 }
 
 std::unique_ptr<ECDR> Zip::readEcdr(const std::vector<std::byte> &data) {
@@ -182,6 +219,9 @@ void Zip::extract(const std::string &filename) {
   }
 
   std::vector<std::byte> data = Zip::decompress(lfh);
+  if (not areChecksumsValid(data, lfh, cdfh)) {
+    throw std::runtime_error("Invalid checksum");
+  }
   utils::writeFile(filename, data);
 }
 
