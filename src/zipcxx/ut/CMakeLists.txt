@@ -1,16 +1,25 @@
-function(add_ut target_name sources libraries input_samples)
-  add_executable(${target_name} ${target_name}.cpp ${sources})
-  target_link_libraries(${target_name} PUBLIC gtest gtest_main pthread ${libraries})
+include(CMakeParseArguments)
+
+function(add_ut)
+  cmake_parse_arguments(
+    ARG
+    ""
+    "TEST_NAME"
+    "SRCS;LIBS;SAMPLES"
+    ${ARGN}
+  )
+  add_executable(${ARG_TEST_NAME} ${ARG_TEST_NAME}.cpp ${ARG_SRCS})
+  target_link_libraries(${ARG_TEST_NAME} PUBLIC gtest gtest_main pthread ${ARG_LIBS})
   
-  foreach(current_sample ${input_samples})
+  foreach(current_sample ${ARG_SAMPLES})
   add_custom_command(
-      TARGET ${target_name}
+      TARGET ${ARG_TEST_NAME}
       POST_BUILD
       COMMAND ${CMAKE_COMMAND}
       ARGS -E copy ${current_sample} ${CMAKE_CURRENT_BINARY_DIR}
   )
   endforeach(current_sample)
-endfunction()
+endfunction(add_ut)
 
 set(COMMON_SAMPLES "${CMAKE_CURRENT_SOURCE_DIR}/common_samples")
 
