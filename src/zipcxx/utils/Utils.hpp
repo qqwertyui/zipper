@@ -20,36 +20,16 @@ private:
   struct tm timeinfo;
 };
 
-class Data {
-public:
-  std::byte *data;
-  unsigned int data_size;
-
-  Data(std::byte *data, unsigned int data_size);
-  Data(std::vector<std::byte> &data);
-  Data() = default;
-};
-
-typedef std::vector<Data *> Data_vector;
-
 class Chunk_manager {
 public:
-  unsigned int elements;
-  unsigned int total_bytes;
-  Data_vector entry;
+  unsigned int total_bytes{};
+  std::vector<std::vector<std::byte>> entries;
 
-  Chunk_manager();
-  ~Chunk_manager();
-
-  void add(std::byte *data, unsigned int datasz);
-  std::byte *to_bytearray();
+  void add(const std::vector<std::byte> &data);
+  std::vector<std::byte> to_bytearray();
 };
 
-/* Returns address of the last occurence of given character in string, alters
- * input string */
-char *find_last_of(const char *text, const char *delimiter);
-
-std::vector<std::byte> zlib_inflate(Data *input);
+std::vector<std::byte> zlib_inflate(std::vector<std::byte> &input);
 
 std::vector<std::byte>
 readFile(const std::string &filename,

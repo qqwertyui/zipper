@@ -4,6 +4,7 @@
 #include "Version.hpp"
 #include "zipcxx/Zip.hpp"
 #include <iostream>
+#include <memory>
 
 enum Status { ok, not_enough_args, invalid_zip, processing_error };
 
@@ -11,26 +12,26 @@ int main(int argc, char **argv) {
   gflags::SetUsageMessage("zipper.exe -f <input> -m [list,extract]\n");
   gflags::SetVersionString(Version::STRING);
   gflags::ParseCommandLineFlags(&argc, &argv, true);
-  if (FLAGS_f.empty() == true) {
+  if (FLAGS_f.empty()) {
     std::cerr << gflags::ProgramUsage() << "\n";
     return Status::not_enough_args;
   }
 
-  zipcxx::Zip *archive{nullptr};
+  std::unique_ptr<zipcxx::Zip> archive{nullptr};
   try {
-    archive = new zipcxx::Zip(FLAGS_f);
+    archive = std::make_unique<zipcxx::Zip>(FLAGS_f);
   } catch (const std::runtime_error &e) {
     std::cerr << "ZIP error: " << e.what() << "\n";
     return Status::invalid_zip;
   }
 
   try {
-    if (FLAGS_m.compare("list") == 0) {
+    if (FLAGS_m == "list") {
       for (auto &entry : archive->getEntries()) {
         std::cout << entry.getTimeAsString() << " | " << entry.getFilename()
                   << "\n";
       }
-    } else if (FLAGS_m.compare("extract") == 0) {
+    } else if (FLAGS_m == "extract") {
       archive->extractAll();
       std::cout << "Sucesfully extraced file(s)\n";
     } else {

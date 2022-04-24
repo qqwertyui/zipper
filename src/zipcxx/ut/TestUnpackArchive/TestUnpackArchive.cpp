@@ -1,6 +1,6 @@
 #include <Zip.hpp>
-#include <cstdio>
 #include <gtest/gtest.h>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -13,16 +13,16 @@ bool test_archive(const std::string &name,
     return false;
   }
   bool ok = false;
-  for (auto &e : z.getEntries()) {
+  for (const auto &e : z.getEntries()) {
     const std::string &current = e.getFilename();
-    for (std::string file : expected) {
-      if (file.compare(current) == 0) {
+    for (const auto &file : expected) {
+      if (file == current) {
         ok = true;
         break;
       }
     }
-    if (ok == false) {
-      printf("Failed at: %s\n", current.c_str());
+    if (not ok) {
+      std::cerr << "Failed at:" << current << "\n";
       return false;
     }
   }
@@ -35,7 +35,7 @@ TEST(UnzipArchive, unzip1) {
       "cryptest_bds.bdsgroup", "cryptest_bds.bdsproj", "cryptest_bds.bpf",
       "cryptlib_bds.bdsproj", "cryptlib_bds.cpp"};
 
-  if (test_archive(archive, expected) == false) {
+  if (not test_archive(archive, expected)) {
     FAIL();
   }
 }
@@ -52,7 +52,7 @@ TEST(UnzipArchive, unzip2) {
                                        "ligowave/LIGO-W-JET-MIB.mib",
                                        "ligowave/LIGO-W-JET-MIMO-MIB.mib"};
 
-  if (test_archive(archive, expected) == false) {
+  if (not test_archive(archive, expected)) {
     FAIL();
   }
 }
@@ -941,7 +941,7 @@ TEST(UnzipArchive, unzip3) {
       "javacardx/framework/util/UtilException.class",
       "jpcsclite.properties",
       "logging.properties"};
-  if (test_archive(archive, expected) == false) {
+  if (not test_archive(archive, expected)) {
     FAIL();
   }
 }

@@ -18,7 +18,7 @@ ZipEntry::ZipEntry(const CDFH &cdfh, const LFH &lfh)
       time(std::make_unique<utils::DosTime>(cdfh.s.mod_time, cdfh.s.mod_date)) {
 }
 
-ZipEntry::ZipEntry(ZipEntry &&old)
+ZipEntry::ZipEntry(ZipEntry &&old) noexcept
     : cdfh(std::move(old.cdfh)), lfh(std::move(old.lfh)),
       time(std::move(old.time)) {}
 

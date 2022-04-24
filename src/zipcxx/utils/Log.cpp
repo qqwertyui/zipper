@@ -1,28 +1,12 @@
 #include "Log.hpp"
-#include <cstdio>
+#include <fmt/core.h>
 
 namespace zipcxx::utils::logging {
 
-void info(const char *msg) { fprintf(stdout, "[+] %s", msg); }
-void infof(const char *msg, ...) {
-  va_list valist;
-  va_start(valist, msg);
+void info(const std::string &message) { fmt::print("[+] {}\n", message); }
 
-  fprintf(stdout, "[+] ");
-  vfprintf(stdout, msg, valist);
+void warn(const std::string &message) { fmt::print("[!] {}\n", message); }
 
-  va_end(valist);
-}
-
-void error(const char *msg) { fprintf(stderr, "[!] %s", msg); }
-void errorf(const char *msg, ...) {
-  va_list valist;
-  va_start(valist, msg);
-
-  fprintf(stderr, "[!] ");
-  vfprintf(stderr, msg, valist);
-
-  va_end(valist);
-}
+void error(const std::string &message) { fmt::print("[-] {}\n", message); }
 
 } // namespace zipcxx::utils::logging

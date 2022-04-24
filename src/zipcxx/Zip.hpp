@@ -22,21 +22,22 @@ public:
   ZipEntry &getEntryByFilename(const std::string &filename);
 
 private:
-  void checkIfValidArchive(const std::vector<std::byte> &rawBytes);
-  bool areChecksumsValid(const std::vector<std::byte> &rawBytes, const LFH &lfh,
-                         const CDFH &cdfh);
-  bool areLoadedHeadersValid(const std::vector<LFH> &lfhs,
-                             const std::vector<CDFH> &cdfhs);
+  static void checkIfValidArchive(const std::vector<std::byte> &rawBytes);
+  static bool areChecksumsValid(const std::vector<std::byte> &rawBytes,
+                                const LFH &lfh, const CDFH &cdfh);
+  static bool areLoadedHeadersValid(const std::vector<LFH> &lfhs,
+                                    const std::vector<CDFH> &cdfhs);
   static bool isValidLFHSignature(const std::vector<std::byte> &inputSignature);
   static bool isDirectory(const CDFH &entry);
   static uint32_t crc32(const std::vector<std::byte> &rawBytes);
 
-  std::unique_ptr<ECDR> readEcdr(const std::vector<std::byte> &data);
-  std::vector<CDFH> readCdfhs(const std::vector<std::byte> &data);
-  std::vector<LFH> readLfhs(const std::vector<std::byte> &data,
-                            const std::vector<CDFH> &cdfhs);
+  static std::unique_ptr<ECDR> readEcdr(const std::vector<std::byte> &data);
+  static std::vector<CDFH> readCdfhs(const std::unique_ptr<ECDR> &ecdr,
+                                     const std::vector<std::byte> &data);
+  static std::vector<LFH> readLfhs(const std::vector<std::byte> &data,
+                                   const std::vector<CDFH> &cdfhs);
 
-  std::vector<std::byte> decompress(LFH &lfh);
+  static std::vector<std::byte> decompress(LFH &lfh);
 
   std::unique_ptr<ECDR> ecdr;
   std::vector<ZipEntry> entries;

@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <fmt/core.h>
 #include <stdexcept>
 
 namespace zipcxx {
@@ -9,23 +10,25 @@ namespace zipcxx {
 Hexdumpable::Hexdumpable(const std::vector<std::byte> &raw_bytes)
     : raw_bytes(raw_bytes) {}
 
+Hexdumpable::Hexdumpable(std::vector<std::byte> &&raw_bytes)
+    : raw_bytes(std::move(raw_bytes)) {}
+
 Hexdumpable::Hexdumpable(const Hexdumpable &old) : raw_bytes(old.raw_bytes) {}
 
-Hexdumpable::Hexdumpable(Hexdumpable &&old)
+Hexdumpable::Hexdumpable(Hexdumpable &&old) noexcept
     : raw_bytes(std::move(old.raw_bytes)) {}
 
 void Hexdumpable::hexdump() {
+  constexpr int BYTES_PER_LINE{0x10};
   int i = 0;
   for (const auto &byte : raw_bytes) {
-    if (i % 0x10 == 0) {
-      puts("");
+    if (i % BYTES_PER_LINE == 0) {
+      fmt::print("\n");
     }
-    printf("%.2x ", static_cast<uint8_t>(byte));
+    fmt::print("{:#04x} ", static_cast<uint8_t>(byte));
     i++;
   }
 }
-
-ECDR::ECDR() : Hexdumpable() {}
 
 ECDR::ECDR(std::vector<std::byte> &data) : Hexdumpable(data) {
   memcpy(&this->s, data.data(), sizeof(ECDR_static));
@@ -37,8 +40,6 @@ ECDR::ECDR(std::vector<std::byte> &data) : Hexdumpable(data) {
   }
 }
 
-LFH::LFH() : Hexdumpable() {}
-
 LFH::LFH(std::vector<std::byte> &data) : Hexdumpable(data) {
   if (data.size() < sizeof(LFH_static)) {
     throw std::runtime_error("Corrupted archive (invalid LFH entry length)");
@@ -46,8 +47,7 @@ LFH::LFH(std::vector<std::byte> &data) : Hexdumpable(data) {
   memcpy(&this->s, data.data(), sizeof(LFH_static));
 
   char *ptr = reinterpret_cast<char *>(data.data() + sizeof(LFH_static));
-  unsigned int length;
-  length = this->s.name_length;
+  unsigned int length = this->s.name_length;
   if (length == 0) {
     throw std::runtime_error(
         "Corrupted archive (LFH entry contains no filename)");
@@ -73,7 +73,7 @@ LFH::LFH(const LFH &old) : Hexdumpable(old.raw_bytes) {
   this->data = old.data;
 }
 
-LFH::LFH(LFH &&old)
+LFH::LFH(LFH &&old) noexcept
     : Hexdumpable(std::move(old.raw_bytes)), name(std::move(old.name)),
       extra(std::move(old.extra)), data(std::move(old.data)) {
   this->s = old.s;
@@ -91,8 +91,6 @@ LFH &LFH::operator=(const LFH &old) {
   return *this;
 }
 
-CDFH::CDFH() : Hexdumpable() {}
-
 CDFH::CDFH(std::vector<std::byte> &data) : Hexdumpable(data) {
   if (data.size() < sizeof(CDFH_static)) {
     throw std::runtime_error("Corrupted archive (invalid CDFH entry length)");
@@ -100,8 +98,7 @@ CDFH::CDFH(std::vector<std::byte> &data) : Hexdumpable(data) {
   memcpy(&this->s, data.data(), sizeof(CDFH_static));
 
   char *ptr = reinterpret_cast<char *>(data.data() + sizeof(CDFH_static));
-  unsigned int length;
-  length = this->s.name_length;
+  unsigned int length = this->s.name_length;
   if (length == 0) {
     throw std::runtime_error(
         "Corrupted archive (CDFH entry contains no filename)");
@@ -129,7 +126,7 @@ CDFH::CDFH(const CDFH &old) : Hexdumpable(old.raw_bytes) {
   this->comment = old.comment;
 }
 
-CDFH::CDFH(CDFH &&old)
+CDFH::CDFH(CDFH &&old) noexcept
     : Hexdumpable(std::move(old.raw_bytes)), name(std::move(old.name)),
       extra(std::move(old.extra)), comment(std::move(old.comment)) {
   this->s = old.s;

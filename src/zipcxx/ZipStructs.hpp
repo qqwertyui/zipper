@@ -13,8 +13,9 @@ class Hexdumpable {
 public:
   Hexdumpable() = default;
   Hexdumpable(const std::vector<std::byte> &raw_bytes);
+  Hexdumpable(std::vector<std::byte> &&raw_bytes);
   Hexdumpable(const Hexdumpable &old);
-  Hexdumpable(Hexdumpable &&old);
+  Hexdumpable(Hexdumpable &&old) noexcept;
 
   virtual void hexdump();
 
@@ -47,10 +48,10 @@ struct LFH_static {
 */
 class LFH : public Signaturable, Hexdumpable {
 public:
-  LFH();
+  LFH() = default;
   LFH(std::vector<std::byte> &data);
   LFH(const LFH &old);
-  LFH(LFH &&old);
+  LFH(LFH &&old) noexcept;
   LFH &operator=(const LFH &old);
 
   LFH_static s;
@@ -88,10 +89,10 @@ struct CDFH_static {
 
 class CDFH : public Signaturable, Hexdumpable {
 public:
-  CDFH();
+  CDFH() = default;
   CDFH(std::vector<std::byte> &data);
   CDFH(const CDFH &old);
-  CDFH(CDFH &&old);
+  CDFH(CDFH &&old) noexcept;
   CDFH &operator=(const CDFH &old);
 
   CDFH_static s;
@@ -120,7 +121,7 @@ struct ECDR_static {
 
 class ECDR : public Signaturable, Hexdumpable {
 public:
-  ECDR();
+  ECDR() = default;
   ECDR(std::vector<std::byte> &data);
 
   ECDR_static s;

@@ -13,7 +13,7 @@ Zip::Zip(const std::string &filename) {
   checkIfValidArchive(rawBytes);
 
   this->ecdr = Zip::readEcdr(rawBytes);
-  auto cdfhs{Zip::readCdfhs(rawBytes)};
+  auto cdfhs{Zip::readCdfhs(this->ecdr, rawBytes)};
   auto lfhs{Zip::readLfhs(rawBytes, cdfhs)};
 
   if (not areLoadedHeadersValid(lfhs, cdfhs)) {
@@ -53,7 +53,7 @@ bool Zip::areLoadedHeadersValid(const std::vector<LFH> &lfhs,
 
 void Zip::checkIfValidArchive(const std::vector<std::byte> &rawBytes) {
   if (rawBytes.size() < 4 or
-      isValidLFHSignature({rawBytes.begin(), rawBytes.begin() + 4}) == false) {
+      not isValidLFHSignature({rawBytes.begin(), rawBytes.begin() + 4})) {
     throw std::runtime_error("Not a valid archive");
   }
   if (rawBytes.size() < sizeof(ECDR_static)) {
@@ -62,14 +62,19 @@ void Zip::checkIfValidArchive(const std::vector<std::byte> &rawBytes) {
 }
 
 uint32_t Zip::crc32(const std::vector<std::byte> &rawBytes) {
-  uint32_t crc = 0xFFFFFFFF;
+  constexpr unsigned int INITIAL_CRC = 0xFFFFFFFF;
+  constexpr unsigned int CRC_POLYNOMIAL = 0xEDB88320;
+  constexpr unsigned int BITS_PER_BYTE = 8;
+
+  uint32_t crc = INITIAL_CRC;
   for (unsigned int i = 0; i < rawBytes.size(); i++) {
     char ch = static_cast<char>(rawBytes[i]);
-    for (unsigned int j = 0; j < 8; j++) {
+    for (unsigned int j = 0; j < BITS_PER_BYTE; j++) {
       uint32_t b = (ch ^ crc) & 1;
       crc >>= 1;
-      if (b)
-        crc = crc ^ 0xEDB88320;
+      if (b != 0U) {
+        crc = crc ^ CRC_POLYNOMIAL;
+      }
       ch >>= 1;
     }
   }
@@ -86,7 +91,7 @@ bool Zip::areChecksumsValid(const std::vector<std::byte> &rawBytes,
 }
 
 std::unique_ptr<ECDR> Zip::readEcdr(const std::vector<std::byte> &data) {
-  if (data.size() == 0) {
+  if (data.empty()) {
     throw std::runtime_error("Couldn't read ECDR structure");
   }
   const std::byte *ptr = data.data() + data.size() - sizeof(ECDR_static);
@@ -104,15 +109,16 @@ std::unique_ptr<ECDR> Zip::readEcdr(const std::vector<std::byte> &data) {
   return std::make_unique<ECDR>(ecdr);
 }
 
-std::vector<CDFH> Zip::readCdfhs(const std::vector<std::byte> &data) {
+std::vector<CDFH> Zip::readCdfhs(const std::unique_ptr<ECDR> &ecdr,
+                                 const std::vector<std::byte> &data) {
   std::vector<CDFH> cdfhs;
-  if (data.size() == 0 || this->ecdr == nullptr) {
+  if (data.empty() or ecdr == nullptr) {
     throw std::runtime_error("Couldn't read CDFHs structures");
   }
 
-  const std::byte *begin = data.data() + this->ecdr->s.cd_offset;
+  const std::byte *begin = data.data() + ecdr->s.cd_offset;
   const std::byte *end = nullptr;
-  for (size_t i = 0; i < this->ecdr->s.number_entries; i++) {
+  for (size_t i = 0; i < ecdr->s.number_entries; i++) {
     const CDFH_static *s = reinterpret_cast<const CDFH_static *>(begin);
     end = begin + sizeof(CDFH_static) + s->name_length + s->extra_length +
           s->comment_length;
@@ -126,14 +132,14 @@ std::vector<CDFH> Zip::readCdfhs(const std::vector<std::byte> &data) {
 std::vector<LFH> Zip::readLfhs(const std::vector<std::byte> &data,
                                const std::vector<CDFH> &cdfhs) {
   std::vector<LFH> lfhs;
-  if (data.size() == 0 || cdfhs.size() == 0) {
+  if (data.empty() or cdfhs.empty()) {
     throw std::runtime_error("Couldn't read LFHs structures");
   }
   int i = 0;
   for (const CDFH &cdfh : cdfhs) {
     const std::byte *begin = data.data() + cdfh.s.lh_offset;
     const std::byte *end = begin + sizeof(LFH_static);
-    LFH_static *s = (LFH_static *)begin;
+    const LFH_static *s = reinterpret_cast<const LFH_static *>(begin);
     end += s->name_length + s->extra_length + cdfh.s.c_size;
 
     std::vector<std::byte> lfh(begin, end);
@@ -168,10 +174,9 @@ std::vector<std::string> Zip::getFilenames() const {
 /* Detects compression method and tries to decompress the archive */
 std::vector<std::byte> Zip::decompress(LFH &lfh) {
   std::vector<std::byte> output;
-  utils::Data input(lfh.data);
   Compression method = static_cast<Compression>(lfh.s.c_method);
   if (method == Compression::DEFLATE) {
-    output = utils::zlib_inflate(&input);
+    output = utils::zlib_inflate(lfh.data);
   } else if (method == Compression::STORED) {
     output.resize(lfh.s.c_size);
     memcpy(output.data(), lfh.data.data(), lfh.data.size());
@@ -181,9 +186,8 @@ std::vector<std::byte> Zip::decompress(LFH &lfh) {
 
 ZipEntry &Zip::getEntryByFilename(const std::string &filename) {
   auto it = std::find_if(
-      this->entries.begin(), this->entries.end(), [&filename](const auto &e) {
-        return (e.getFilename().compare(filename) == 0) ? true : false;
-      });
+      this->entries.begin(), this->entries.end(),
+      [&filename](const auto &e) { return (e.getFilename() == filename); });
 
   if (it == this->entries.end()) {
     throw std::runtime_error("Given file doesn't exist in archive");
@@ -197,23 +201,14 @@ void Zip::extract(const std::string &filename) {
   CDFH &cdfh = e.getCdfh();
   LFH &lfh = e.getLfh();
 
-  std::string filename_copy = filename;
-  char *nested_directory = utils::find_last_of(filename_copy.data(), "/");
-  char *filename_copy_initial = filename_copy.data();
-
+  size_t dirname_length = filename.find_last_of('/');
   if (Zip::isDirectory(cdfh)) {
     std::filesystem::create_directories(filename);
     return;
-  } else if (nested_directory != nullptr) {
-    // pointer subtraction to calculate new string size
-    size_t dirname_length = (nested_directory - filename_copy_initial);
-
-    // split path and basename
-    // e.g. myfiles/directory1/directory2/secret.txt
-    // path: myfiles/directory1/directory2/ basename: secret.txt
-    // then, create path and put the file in it
+  }
+  if (dirname_length != std::string::npos) {
     std::string dirname = filename.substr(0, dirname_length);
-    if (dirname.empty() == false) {
+    if (not dirname.empty()) {
       std::filesystem::create_directories(filename);
     }
   }
@@ -230,8 +225,6 @@ void Zip::extractAll() {
   for (auto &entry : this->entries) {
     CDFH &c_cdfh = entry.getCdfh();
     std::string name = entry.getFilename();
-
-    printf("Extracting %s\n", name.c_str());
     this->extract(name);
   }
 }

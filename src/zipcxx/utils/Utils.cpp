@@ -8,12 +8,30 @@
 namespace zipcxx::utils {
 
 DosTime::DosTime(uint16_t time, uint16_t date) {
-  timeinfo.tm_sec = (time & 0x1f) * 2;
-  timeinfo.tm_min = (time & 0x7ff) >> 5;
-  timeinfo.tm_hour = time >> 11;
-  timeinfo.tm_mday = date & 0x1f;
-  timeinfo.tm_mon = ((date & 0x1ff) >> 5) - 1;
-  timeinfo.tm_year = (1980 + (date >> 9)) - 1900;
+  constexpr int SEC_BITMAP = 0x1f;
+  constexpr int SEC_MULTIPLIER = 2;
+
+  constexpr int MIN_BITMASK = 0x7ff;
+  constexpr int MIN_SHIFT = 5;
+
+  constexpr int HOUR_SHIFT = 11;
+
+  constexpr int MDAY_BITMASK = 0x1f;
+
+  constexpr int MON_BITMASK = 0x1ff;
+  constexpr int MON_SHIFT = 5;
+  constexpr int MON_SUBTRAHEND = 1;
+
+  constexpr int YEAR_BASE = 1980;
+  constexpr int YEAR_SHIFT = 9;
+  constexpr int YEAR_SUBTRAHEND = 1900;
+
+  timeinfo.tm_sec = (time & SEC_BITMAP) * SEC_MULTIPLIER;
+  timeinfo.tm_min = (time & MIN_BITMASK) >> MIN_SHIFT;
+  timeinfo.tm_hour = time >> HOUR_SHIFT;
+  timeinfo.tm_mday = date & MDAY_BITMASK;
+  timeinfo.tm_mon = ((date & MON_BITMASK) >> MON_SHIFT) - MON_SUBTRAHEND;
+  timeinfo.tm_year = (YEAR_BASE + (date >> YEAR_SHIFT)) - YEAR_SUBTRAHEND;
 }
 
 time_t DosTime::getUnixTimestamp() { return mktime(&timeinfo); }
@@ -22,64 +40,22 @@ struct tm DosTime::getTmStruct() {
   return timeinfo;
 }
 
-Data::Data(std::byte *data, unsigned int data_size) {
-  this->data = data;
-  this->data_size = data_size;
+void Chunk_manager::add(const std::vector<std::byte> &data) {
+  this->entries.push_back(data);
+  this->total_bytes += data.size();
 }
 
-Data::Data(std::vector<std::byte> &data) {
-  this->data = data.data();
-  this->data_size = data.size();
-}
-
-Chunk_manager::Chunk_manager() {
-  this->elements = 0;
-  this->total_bytes = 0;
-}
-
-Chunk_manager::~Chunk_manager() {
-  for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       ++i) {
-    delete[](*i)->data;
-  }
-  for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       ++i) {
-    delete (*i);
-  }
-}
-
-void Chunk_manager::add(std::byte *data, unsigned int data_size) {
-  std::byte *tmp = new std::byte[data_size];
-  memcpy(tmp, data, data_size);
-
-  this->entry.push_back(new Data(tmp, data_size));
-  this->elements += 1;
-  this->total_bytes += data_size;
-}
-
-std::byte *Chunk_manager::to_bytearray() {
-  std::byte *bytes = new std::byte[this->total_bytes];
-  unsigned int counter = 0;
-  for (Data_vector::iterator i = this->entry.begin(); i != this->entry.end();
-       ++i) {
-    memcpy(bytes + counter, (*i)->data, (*i)->data_size);
-    counter += (*i)->data_size;
+std::vector<std::byte> Chunk_manager::to_bytearray() {
+  std::vector<std::byte> bytes(this->total_bytes);
+  unsigned int offset = 0;
+  for (const auto &entry : entries) {
+    memcpy(bytes.data() + offset, entry.data(), entry.size());
+    offset += entry.size();
   }
   return bytes;
 }
 
-char *find_last_of(const char *text, const char *delimiter) {
-  char *stripped_name = nullptr;
-  char *tmp = strtok((char *)text, delimiter);
-  do {
-    stripped_name = tmp;
-    tmp = strtok(nullptr, delimiter);
-  } while (tmp != nullptr);
-
-  return stripped_name;
-}
-
-std::vector<std::byte> zlib_inflate(Data *input) {
+std::vector<std::byte> zlib_inflate(std::vector<std::byte> &input) {
   constexpr unsigned int CHUNKSZ = 0x1000;
   Chunk_manager container;
   z_stream infstream;
@@ -87,38 +63,36 @@ std::vector<std::byte> zlib_inflate(Data *input) {
   infstream.zalloc = Z_NULL;
   infstream.zfree = Z_NULL;
   infstream.opaque = Z_NULL;
-  infstream.avail_in = (uInt)input->data_size;
-  infstream.next_in = (Bytef *)input->data;
+  infstream.avail_in = static_cast<uInt>(input.size());
+  infstream.next_in = reinterpret_cast<Bytef *>(input.data());
 
   int status = inflateInit2(&infstream, -MAX_WBITS);
   if (status != Z_OK) {
     throw std::runtime_error("Decompression error");
   }
 
-  std::byte temp[CHUNKSZ] = {};
+  std::array<std::byte, CHUNKSZ> temp{};
   do {
     infstream.avail_out = CHUNKSZ;
-    infstream.next_out = (Bytef *)temp;
+    infstream.next_out = reinterpret_cast<Bytef *>(temp.data());
 
     status = inflate(&infstream, Z_NO_FLUSH);
     if (status != Z_OK && status != Z_STREAM_END) {
       inflateEnd(&infstream);
       throw std::runtime_error("Decompression error");
     }
-    int have = CHUNKSZ - infstream.avail_out;
-    container.add(temp, have);
+    unsigned int bytesUsed = CHUNKSZ - infstream.avail_out;
+    container.add(std::vector<std::byte>{temp.data(), temp.data() + bytesUsed});
   } while (status != Z_STREAM_END);
 
   inflateEnd(&infstream);
-  std::vector<std::byte> result(container.total_bytes);
-  memcpy(result.data(), container.to_bytearray(), container.total_bytes);
-  return result;
+  return container.to_bytearray();
 }
 
 std::vector<std::byte> readFile(const std::string &filename,
                                 std::ifstream::openmode flags) {
   std::ifstream file(filename, flags);
-  if (file.good() == false) {
+  if (not file.good()) {
     throw std::runtime_error("File reading error");
   }
 
@@ -127,7 +101,7 @@ std::vector<std::byte> readFile(const std::string &filename,
   file.seekg(0, std::ios_base::beg);
 
   std::vector<std::byte> result(filesz);
-  file.read((char *)result.data(), result.capacity());
+  file.read(reinterpret_cast<char *>(result.data()), result.size());
   file.close();
   return result;
 }
@@ -135,10 +109,10 @@ std::vector<std::byte> readFile(const std::string &filename,
 void writeFile(const std::string &filename, const std::vector<std::byte> &data,
                std::ofstream::openmode flags) {
   std::ofstream file(filename, flags);
-  if (file.good() == false) {
+  if (not file.good()) {
     throw std::runtime_error("File writing error");
   }
-  file.write((char *)data.data(), data.size());
+  file.write(reinterpret_cast<const char *>(data.data()), data.size());
   file.close();
 }
 

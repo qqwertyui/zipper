@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
   try {
     auto archive = std::make_unique<zipcxx::Zip>(argv[1]);
     unsigned int files{static_cast<unsigned int>(argc - 2)};
-    if (files) {
+    if (files != 0U) {
       for (unsigned int i = 0; i < files; i++) {
         printHeaders(archive->getEntryByFilename(argv[2 + i]));
       }

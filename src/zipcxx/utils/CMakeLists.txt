@@ -6,3 +6,4 @@ set(
 
 add_library(utils STATIC ${UTILS_SOURCES})
 target_link_libraries(utils PUBLIC z)
+target_link_libraries(utils PUBLIC fmt)

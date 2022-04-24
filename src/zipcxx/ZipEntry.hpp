@@ -15,7 +15,7 @@ class DosTime;
 class ZipEntry {
 public:
   explicit ZipEntry(const CDFH &cdfh, const LFH &lfh);
-  ZipEntry(ZipEntry &&old);
+  ZipEntry(ZipEntry &&old) noexcept;
   ZipEntry(const ZipEntry &old);
 
   std::string getFilename() const;

@@ -3,8 +3,7 @@
 #include <string>
 
 namespace zipcxx::utils::logging {
-void info(const char *msg);
-void infof(const char *msg, ...);
-void error(const char *msg);
-void errorf(const char *msg, ...);
+void info(const std::string &message);
+void warn(const std::string &message);
+void error(const std::string &message);
 } // namespace zipcxx::utils::logging
