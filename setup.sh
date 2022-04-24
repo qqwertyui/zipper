@@ -7,8 +7,7 @@ export CXX="clang++"
 generate_cmake() {
   cd ${PROJECT_ROOT}
   rm build -rf ; mkdir build ; cd build
-  # temporary workaround for clang
-  cmake .. -G"Unix Makefiles" -DCMAKE_C_FLAGS_INIT="--target=x86_64-pc-windows-gnu" -DCMAKE_CXX_FLAGS_INIT="--target=x86_64-pc-windows-gnu"
+  cmake ..
 }
 
 build_app() {
@@ -20,7 +19,7 @@ build_app() {
 
 run_tests() {
   pushd ${PROJECT_ROOT}/build/src/zipcxx/ut/ &>/dev/null
-  readarray -d '' tests < <(/usr/bin/find . -name "Test*.exe" -print0)
+  readarray -d '' tests < <(/usr/bin/find . -type f -executable -name "Test*" -print0)
   failedTests=()
   for test in "${tests[@]}"; do
     testName=$(basename $test .exe)
