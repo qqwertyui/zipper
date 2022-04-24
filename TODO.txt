@@ -3,4 +3,4 @@
 3. Add support for archive creation
 4. Add GUI interface
 5. Prepare vscode extensions for cmake and bash files formatting
-6. Setup CI/CD
+6. Improve CI/CD
