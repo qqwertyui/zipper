@@ -7,8 +7,7 @@ export CXX="clang++"
 generate_cmake() {
   cd ${PROJECT_ROOT}
   rm build -rf ; mkdir build ; cd build
-  # temporary workaround for clang
-  cmake .. -G"Unix Makefiles" -DCMAKE_C_FLAGS_INIT="--target=x86_64-pc-windows-gnu" -DCMAKE_CXX_FLAGS_INIT="--target=x86_64-pc-windows-gnu"
+  cmake ..
 }
 
 build_app() {
