@@ -3,7 +3,7 @@
 ### 1. Description
 Simple zip archive unpacker and lister created for learning purposes. If you are not interested in application
 but in library itself it can be found under src/zipcxx
-It supports zip files that encryptions scheme is:
+It supports zip files that compression scheme is:
 - stored
 - deflated
 
@@ -14,8 +14,10 @@ It doesn't understand what encryption is so any zip encrypted with password cann
 - gflags
 - gtest
 - zlib
+- fmt
 #### 2.2 Tools
 - g++ with c++17 support
+- llvm (clang, clang-tidy)
 - cygwin (bash, find)
 - cmake
 - gnu make
