@@ -1,4 +1,5 @@
 include(CMakeParseArguments)
+find_package(GTest REQUIRED)
 
 function(add_ut)
   cmake_parse_arguments(
@@ -9,7 +10,7 @@ function(add_ut)
     ${ARGN}
   )
   add_executable(${ARG_TEST_NAME} ${ARG_TEST_NAME}.cpp ${ARG_SRCS})
-  target_link_libraries(${ARG_TEST_NAME} PUBLIC gtest gtest_main pthread ${ARG_LIBS})
+  target_link_libraries(${ARG_TEST_NAME} PUBLIC GTest::GTest pthread ${ARG_LIBS})
   
   foreach(current_sample ${ARG_SAMPLES})
   add_custom_command(

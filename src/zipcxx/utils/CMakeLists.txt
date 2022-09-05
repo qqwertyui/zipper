@@ -5,5 +5,8 @@ set(
 )
 
 add_library(utils STATIC ${UTILS_SOURCES})
-target_link_libraries(utils PUBLIC z)
-target_link_libraries(utils PUBLIC fmt)
+find_package(ZLIB REQUIRED)
+find_package(fmt REQUIRED)
+
+target_link_libraries(utils PUBLIC ZLIB::ZLIB)
+target_link_libraries(utils PUBLIC fmt::fmt)
