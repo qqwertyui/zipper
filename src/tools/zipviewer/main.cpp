@@ -1,4 +1,4 @@
-#include "../../zipcxx/Zip.hpp"
+#include "zipcxx/Zip.hpp"
 #include <iomanip>
 #include <iostream>
 #include <memory>
